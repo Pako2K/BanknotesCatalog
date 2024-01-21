@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="main_subtitles">
+        <item>Banknotes per Country, Currency, Denomination or Year</item>
+        <item>Multiple Statistics and Filtering Options</item>
+        <item>Log in and Manage your Collection</item>
+    </array>
+</resources>

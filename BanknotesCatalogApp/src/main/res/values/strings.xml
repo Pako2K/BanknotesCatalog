@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Banknotes Catalog</string>
+
+    <string name="main_title">Your Banknotes Catalog\nand\nCollection Manager</string>
+    <string name="header_title">Banknotes Catalog</string>
+
+    <string name="menu_countries">Territories</string>
+    <string name="menu_currencies">Currencies</string>
+    <string name="menu_values">Denominations</string>
+    <string name="menu_years">Years</string>
+    <string name="menu_my_collection">My Collection</string>
+    <string name="menu_login">Log in</string>
+    <string name="menu_not_selected">NONE</string>
+
+
+    <string name="app_log_tag">App-BanknotesCatalog</string>
+
+    <string name="connection_error">Connection to the Server failed...\nPossible reasons:\nNo Internet connection\nBanknotes Catalog server is down</string>
+
+    <string name="BANKNOTES_API_BASE_URL">https://pnokvttomhweznoh3n437jf65m0cudmy.lambda-url.eu-central-1.on.aws/</string>
+
+</resources>

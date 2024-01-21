@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="medium_padding">8dp</dimen>
+    <dimen name="large_padding">16dp</dimen>
+    <dimen name="xl_padding">32dp</dimen>
+    <dimen name="xxl_padding">48dp</dimen>
+
+    <dimen name="header_height">30dp</dimen>
+
+    <dimen name="continent_item_height">36dp</dimen>
+
+    <dimen name="shadowElevation">4dp</dimen>
+</resources>
