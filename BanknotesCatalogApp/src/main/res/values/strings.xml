@@ -15,8 +15,10 @@
 
     <string name="app_log_tag">App-BanknotesCatalog</string>
 
-    <string name="connection_error">Connection to the Server failed...\nPossible reasons:\nNo Internet connection\nBanknotes Catalog server is down</string>
+    <string name="connection_error">Connection to the Server failed…\nPossible reasons:\nNo Internet connection\nBanknotes Catalog server is down</string>
 
     <string name="BANKNOTES_API_BASE_URL">https://pnokvttomhweznoh3n437jf65m0cudmy.lambda-url.eu-central-1.on.aws/</string>
+
+    <string name="content_description_flag">"Flag</string>
 
 </resources>

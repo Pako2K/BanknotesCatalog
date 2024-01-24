@@ -1,9 +1,6 @@
 package com.pako2k.banknotescatalog.app
 
-import com.pako2k.banknotescatalog.data.Continent
-import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryType
 import com.pako2k.banknotescatalog.ui.parts.Sorting
 
 enum class ComponentState {
@@ -19,8 +16,8 @@ data class MainUiState (
 
     val userLoggedIn : Boolean = false,
 
-    val territoriesSortedBy : Int = 2,
-    val territoriesSortingDir : Sorting = Sorting.ASC
+    val territoriesSortedBy : Territory.SortableCol = Territory.SortableCol.NAME,
+    val territoriesSortingDir : Sorting = Sorting.ASC,
 
 )
 

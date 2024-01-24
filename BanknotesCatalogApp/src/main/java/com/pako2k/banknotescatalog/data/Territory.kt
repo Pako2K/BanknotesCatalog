@@ -11,17 +11,12 @@ data class Territory (
     val territoryTypeId : UInt,
     val start : Int,
     val end : Int? = null,
-    val uri: String
-)
-
-fun territoryToMap(territory : Territory) : MutableMap<String, String> {
-    return mutableMapOf(
-        "id" to territory.id.toString(),
-        "name" to territory.name,
-        "iso3" to (territory.iso3 ?: ""),
-        "continentId" to territory.continentId.toString(),
-        "territoryTypeId" to territory.territoryTypeId.toString(),
-        "start" to territory.start.toString(),
-        "end" to (if (territory.end == null) "" else territory.end.toString()),
-        "uri" to territory.uri)
+    val uri: String,
+) {
+    val flagName : String = iso3?.lowercase()?:name.lowercase().replace(",", "").replace(" ", "")
+    enum class SortableCol {
+        NAME,
+        START,
+        END
+    }
 }

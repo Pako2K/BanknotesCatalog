@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
@@ -32,10 +31,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,8 +53,13 @@ import com.pako2k.banknotescatalog.ui.theme.color_table_link
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_even
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_odd
 import com.pako2k.banknotescatalog.ui.theme.typographySans
-import java.io.IOException
-import java.io.InputStream
+
+
+// Non Composable Constants
+private const val BORDER_ALPHA = 0.8f
+private const val INACTIVE_SORT_ICON_ALPHA = 0.3f
+private const val DISABLED_HEADER_BUTTON_ALPHA = 0.5f
+
 
 
 enum class Sorting{
@@ -70,13 +77,14 @@ data class SummaryTableColumn(
     val title : String,
     val align : Alignment = Alignment.Center,
     val width : Dp,
-    val isFlag : Boolean = false, // Only the first Column can be a flag.
+    val isImage : Boolean = false,
     val isStats : Boolean = false,
     val isClickable : Boolean = false,
     val isSortable : Boolean  = false,
     var selectedSorting : Sorting? = null,
-    var sortedBy : StatsColumn? = null // Only used for Stats columns.
+    var sortedBy : StatsColumn? = null // Only used for Stats columns (isStats = true)
 )
+
 
 
 @Composable
@@ -85,9 +93,9 @@ fun SummaryTable(
     columns : List<SummaryTableColumn>,
     fixedColumns : Int,
     isLogged : Boolean = false,
-    data : List<List<String>>,
+    data : List<List<Any?>>,
     onHeaderClick: (Int) -> Unit,
-    onDataClick: (Int, Int) -> Unit
+    onDataClick: (UInt) -> Unit
 ) {
     val hScrollState = rememberScrollState()
 
@@ -127,175 +135,6 @@ fun SummaryTable(
 
 }
 
-@SuppressLint("FrequentlyChangedStateReadInComposition")
-@Composable
-fun SummaryTableData(
-    fixedColumns: List<SummaryTableColumn>,
-    scrollableColumns : List<SummaryTableColumn>?,
-    data : List<List<String>>,
-    horizontalScroll : ScrollState,
-    onClick: (Int, Int) -> Unit
-){
-    val vertScrollState1 = rememberLazyListState()
-    val vertScrollState2 = rememberLazyListState()
-
-    if (scrollableColumns != null) {
-        LaunchedEffect(vertScrollState1.firstVisibleItemScrollOffset) {
-            vertScrollState2.scrollToItem(
-                vertScrollState1.firstVisibleItemIndex,
-                vertScrollState1.firstVisibleItemScrollOffset
-            )
-        }
-        LaunchedEffect(vertScrollState2.firstVisibleItemScrollOffset) {
-            vertScrollState1.scrollToItem(
-                vertScrollState2.firstVisibleItemIndex,
-                vertScrollState2.firstVisibleItemScrollOffset
-            )
-        }
-    }
-
-    var dataIndex = 0
-
-    Row {
-        // Fixed Columns
-        LazyColumn(
-            state = vertScrollState1
-        ) {
-            itemsIndexed(items = data) { index, item ->
-                dataIndex = dataRow(
-                    rowIndex = index,
-                    columns = fixedColumns,
-                    data = item,
-                    firstDataIndex = 0,
-                    onClick = onClick
-                )
-            }
-        }
-
-        if (scrollableColumns != null)
-            // Horizontal scrollable columns
-            LazyColumn(
-                state = vertScrollState2,
-                modifier = Modifier
-                    .leftBorder(Color.DarkGray)
-                    .horizontalScroll(horizontalScroll)
-            ) {
-                itemsIndexed(items = data) { index, item ->
-                    dataRow(
-                        rowIndex = index,
-                        columns = scrollableColumns,
-                        data = item,
-                        firstDataIndex = dataIndex,
-                        onClick = onClick
-                    )
-                }
-            }
-    }
-}
-
-@Composable
-fun dataRow(
-    rowIndex : Int,
-    columns: List<SummaryTableColumn>,
-    data : List<String>,
-    firstDataIndex : Int,
-    onClick: (Int, Int) -> Unit
-) : Int {
-    var dataIndex = firstDataIndex
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .background(if (rowIndex % 2 == 0) color_table_row_odd else color_table_row_even)
-     ) {
-        for (col in columns) {
-            val modifier = if (col.isStats) Modifier.leftBorder(Color.DarkGray) else Modifier
-
-            DataCell(col, data[dataIndex++], modifier, onClick = { onClick(rowIndex, dataIndex)})
-            if (col.isStats){
-                dataIndex++
-                DataCell(col, data[dataIndex], Modifier.rightBorder(Color.DarkGray), onClick = { onClick(rowIndex, dataIndex)})
-            }
-        }
-    }
-    return dataIndex
-}
-
-@SuppressLint("DiscouragedApi")
-@Composable
-fun DataCell(
-    col : SummaryTableColumn,
-    value : String,
-    modifier: Modifier = Modifier,
-    onClick: (String) -> Unit
-){
-    Box(
-        contentAlignment = col.align,
-        modifier = modifier
-            .width(col.width)
-            .padding(dimensionResource(id = R.dimen.small_padding))
-    ) {
-        if (col.isFlag) {
-            val assets =  LocalContext.current.assets
-            var file : InputStream? = null
-            try{
-                file = assets.open("$value.png")
-            }
-            catch(_: IOException){
-            }
-
-            val desc = "flag"
-            val height = 20.dp
-            if (file != null) {
-                Image(
-                    BitmapFactory.decodeStream(file).asImageBitmap(),
-                    contentDescription = desc,
-                    modifier = Modifier.height(height)
-                )
-            }
-            else
-                Image(
-                    painter = painterResource(id = R.drawable.m_flag_icon),
-                    contentDescription = desc,
-                    modifier = Modifier.height(height)
-                )
-        }
-        else
-            if (col.isClickable)
-                ClickableDataText(value, onClick)
-            else
-                DataText(value, col.width < 50.dp)
-    }
-}
-
-@Composable
-fun DataText(value : String, isSmall : Boolean = false ){
-    Text(
-        value,
-        style =  typographySans.displayMedium,
-        fontWeight = if (isSmall) FontWeight.Light else FontWeight.Normal,
-        overflow = TextOverflow.Ellipsis,
-        maxLines = 1,
-        modifier = Modifier
-            .padding(vertical = dimensionResource(id = R.dimen.small_padding))
-    )
-}
-
-@Composable
-fun ClickableDataText(value : String, onClick: (String) -> Unit){
-    Text(
-        value,
-        style = typographySans.displayMedium,
-        color = color_table_link,
-        fontWeight = FontWeight.Bold,
-        overflow = TextOverflow.Ellipsis,
-        maxLines = 1,
-        modifier = Modifier
-            .clickable { onClick(value) }
-            .padding(dimensionResource(id = R.dimen.small_padding))
-    )
-}
-
-
 @Composable
 fun SummaryTableHeader(
     fixedColumns: List<SummaryTableColumn>,
@@ -309,8 +148,8 @@ fun SummaryTableHeader(
         modifier = Modifier
             .background(
                 brush = Brush.verticalGradient(
-                    0.0f to color_table_header_top,
-                    0.9f to color_table_header_bottom
+                    0f to color_table_header_top,
+                    1f to color_table_header_bottom
                 )
             )
     ) {
@@ -323,7 +162,7 @@ fun SummaryTableHeader(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .leftBorder()
+                    .leftBorder(colorResource(id = R.color.header_border_color))
                     .horizontalScroll(horizontalScroll)
             ) {
                 for (col in scrollableColumns){
@@ -344,52 +183,31 @@ fun HeaderColumn(
         Column (
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .leftBorder()
-                .rightBorder()
+                .leftBorder(colorResource(id = R.color.header_border_color))
+                .rightBorder(colorResource(id = R.color.header_border_color))
                 .width(col.width * 2)
+                .padding(dimensionResource(id = R.dimen.header_padding))
         ) {
-            HeaderText(col.title, modifier = Modifier.padding(top = dimensionResource(id = R.dimen.medium_padding)))
+            HeaderText(col.title)
 
             // Subtitles: Stats
             Row(
                 modifier = Modifier
-                    .padding(dimensionResource(id = R.dimen.small_padding))
+                    .padding(top = dimensionResource(id = R.dimen.medium_padding))
             ){
-                Box (
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (col.isSortable)
-                        SortableColumnButton(
-                            id = col.id,
-                            title = StatsColumn.CATALOG.title,
-                            isSubtitle = true,
-                            isSorted =
-                                if (col.sortedBy == StatsColumn.CATALOG) col.selectedSorting
-                                else null,
-                            onClick = onClick
-                        )
-                    else
-                        HeaderText(StatsColumn.CATALOG.title, isSubtitle = true)
-                }
-                Box (
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (col.isSortable)
-                        SortableColumnButton(
-                            id = col.id,
-                            title = StatsColumn.COLLECTION.title,
-                            isSubtitle = true,
-                            isSorted =
-                                if (col.sortedBy == StatsColumn.COLLECTION) col.selectedSorting
-                                else null,
-                            enabled = isLogged,
-                            onClick = onClick
-                        )
-                    else
-                        HeaderText(StatsColumn.COLLECTION.title, isSubtitle = true)
-                }
+                HeaderStatsColumn(
+                    col = col,
+                    statsCol = StatsColumn.CATALOG,
+                    modifier = Modifier.weight(1f),
+                    onClick = onClick
+                )
+                HeaderStatsColumn(
+                    col = col,
+                    statsCol = StatsColumn.COLLECTION,
+                    enabled = isLogged,
+                    modifier = Modifier.weight(1f),
+                    onClick = onClick
+                )
             }
         }
     }
@@ -398,7 +216,7 @@ fun HeaderColumn(
             contentAlignment = col.align,
             modifier = Modifier
                 .width(col.width)
-                .padding(dimensionResource(id = R.dimen.medium_padding))
+                .padding(dimensionResource(id = R.dimen.header_padding))
         ) {
             if (col.isSortable)
                 SortableColumnButton(id = col.id, title = col.title, isSorted = col.selectedSorting, onClick = onClick)
@@ -408,6 +226,33 @@ fun HeaderColumn(
     }
 }
 
+@Composable
+fun HeaderStatsColumn(
+    modifier : Modifier = Modifier,
+    col : SummaryTableColumn,
+    statsCol: StatsColumn,
+    enabled: Boolean = true,
+    onClick: (Int) -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        if (col.isSortable)
+            SortableColumnButton(
+                id = col.id,
+                title = statsCol.title,
+                isSubtitle = true,
+                isSorted =
+                if (col.sortedBy == statsCol) col.selectedSorting
+                else null,
+                enabled = enabled,
+                onClick = onClick
+            )
+        else
+            HeaderText(statsCol.title, isSubtitle = true)
+    }
+}
 
 @Composable
 fun SortableColumnButton(
@@ -422,7 +267,7 @@ fun SortableColumnButton(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clickable(enabled = enabled) { onClick(id) }
-            .alpha(if (enabled) 1f else 0.5f)
+            .alpha(if (enabled) 1f else DISABLED_HEADER_BUTTON_ALPHA)
     ){
         ConstraintLayout {
             HeaderText(title, isSubtitle = isSubtitle, modifier = Modifier.constrainAs(createRef()){
@@ -465,9 +310,9 @@ fun SortIcon(dir : Sorting, modifier : Modifier = Modifier, inactive : Boolean =
         contentDescription = "",
         tint = color_table_header_text,
         modifier = modifier
-            .size(22.dp)
+            .size(dimensionResource(id = R.dimen.sort_icon_size))
             .absoluteOffset(x = (-3).dp, y = vertOffset)
-            .alpha(if (inactive) 0.25f else 1f)
+            .alpha(if (inactive) INACTIVE_SORT_ICON_ALPHA else 1f)
     )
 }
 
@@ -481,29 +326,211 @@ fun SortIcons(modifier : Modifier = Modifier){
     }
 }
 
-fun Modifier.leftBorder(color : Color = Color.LightGray) =
+
+
+@SuppressLint("FrequentlyChangedStateReadInComposition")
+@Composable
+fun SummaryTableData(
+    fixedColumns: List<SummaryTableColumn>,
+    scrollableColumns : List<SummaryTableColumn>?,
+    data : List<List<Any?>>,
+    horizontalScroll : ScrollState,
+    onClick: (UInt) -> Unit
+){
+    val vertScrollState1 = rememberLazyListState()
+    val vertScrollState2 = rememberLazyListState()
+
+    if (scrollableColumns != null) {
+        LaunchedEffect(vertScrollState1.firstVisibleItemScrollOffset) {
+            vertScrollState2.scrollToItem(
+                vertScrollState1.firstVisibleItemIndex,
+                vertScrollState1.firstVisibleItemScrollOffset
+            )
+        }
+        LaunchedEffect(vertScrollState2.firstVisibleItemScrollOffset) {
+            vertScrollState1.scrollToItem(
+                vertScrollState2.firstVisibleItemIndex,
+                vertScrollState2.firstVisibleItemScrollOffset
+            )
+        }
+    }
+
+    // Column index of the data row
+    // (it does not match the column index of the header because of possible Stats columns in the fixed columns
+    val scrollableDataIndex = fixedColumns.count{ it.isStats } + fixedColumns.size
+
+    Row {
+        // Fixed Columns
+        LazyColumn(
+            state = vertScrollState1
+        ) {
+            itemsIndexed(items = data) { index, item ->
+                DataRow(
+                    isEven = index % 2 == 0,
+                    columns = fixedColumns,
+                    data = item,
+                    firstDataIndex = 0,
+                    onClick = onClick
+                )
+            }
+        }
+
+        if (scrollableColumns != null)
+            // Horizontal scrollable columns
+            LazyColumn(
+                state = vertScrollState2,
+                modifier = Modifier
+                    .leftBorder(colorResource(id = R.color.data_border_color))
+                    .horizontalScroll(horizontalScroll)
+            ) {
+                itemsIndexed(items = data) { index, item ->
+                    DataRow(
+                        isEven = index % 2 == 0,
+                        columns = scrollableColumns,
+                        data = item,
+                        firstDataIndex = scrollableDataIndex,
+                        onClick = onClick
+                    )
+                }
+            }
+    }
+}
+
+@Composable
+fun DataRow(
+    isEven : Boolean,
+    columns: List<SummaryTableColumn>,
+    data : List<Any?>,
+    firstDataIndex : Int,
+    onClick: (UInt) -> Unit
+) {
+    var dataIndex = firstDataIndex
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(if (isEven) color_table_row_odd else color_table_row_even)
+     ) {
+        for (col in columns) {
+            if (data[dataIndex] is ImageBitmap?)
+                ImageDataCell(col, data[dataIndex] as ImageBitmap?)
+            else if (data[dataIndex] is String)
+                TextDataCell(col, data[dataIndex] as String, if (col.isStats) Modifier.leftBorder(colorResource(id = R.color.data_border_color)) else Modifier)
+            else
+                ClickableTextDataCell(col, data[dataIndex] as Pair<UInt, String> , onClick = onClick)
+
+            if (col.isStats){
+                dataIndex++
+                TextDataCell(col, data[dataIndex] as String, Modifier.rightBorder(colorResource(id = R.color.data_border_color)))
+            }
+            dataIndex++
+        }
+    }
+}
+
+@Composable
+fun ClickableTextDataCell(
+    col : SummaryTableColumn,
+    value : Pair<UInt,String>,
+    modifier: Modifier = Modifier,
+    onClick: (UInt) -> Unit
+){
+    Box(
+        contentAlignment = col.align,
+        modifier = modifier
+            .width(col.width)
+            .padding(dimensionResource(id = R.dimen.data_padding))
+    ) {
+        Text(
+            text = value.second,
+            style = typographySans.displayMedium,
+            color = color_table_link,
+            fontWeight = FontWeight.Bold,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = Modifier
+                .clickable {
+                    onClick(value.first)
+                }
+                .padding(dimensionResource(id = R.dimen.small_padding))
+        )
+    }
+}
+
+@Composable
+fun TextDataCell(
+    col : SummaryTableColumn,
+    value : String,
+    modifier: Modifier = Modifier,
+){
+    Box(
+        contentAlignment = col.align,
+        modifier = modifier
+            .width(col.width)
+            .padding(dimensionResource(id = R.dimen.data_padding))
+    ) {
+        Text(
+            text = value,
+            style = typographySans.displayMedium,
+            fontWeight = if (col.width < dimensionResource(id = R.dimen.narrow_col_size)) FontWeight.Light else FontWeight.Normal,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(vertical = dimensionResource(id = R.dimen.small_padding))
+        )
+    }
+}
+
+@Composable
+fun ImageDataCell(
+    col : SummaryTableColumn,
+    value : ImageBitmap?,
+
+    modifier: Modifier = Modifier,
+){
+    Box(
+        contentAlignment = col.align,
+        modifier = modifier
+            .width(col.width)
+            .padding(dimensionResource(id = R.dimen.data_padding))
+    ) {
+        if (value != null)
+            Image(
+                bitmap = value,
+                contentDescription = stringResource(id = R.string.content_description_flag),
+                modifier = Modifier.height(dimensionResource(id = R.dimen.flag_size))
+            )
+        else
+            Image(
+                painter = painterResource(id = R.drawable.m_flag_icon),
+                contentDescription = null,
+                modifier = Modifier.height(dimensionResource(id = R.dimen.flag_size))
+            )
+    }
+}
+
+
+
+private fun Modifier.leftBorder(color : Color, strokeWidth : Float = 1f) =
     this.drawBehind {
-        val strokeWidth = 1f
         val y = size.height - strokeWidth / 2
         drawLine(
             color,
             Offset(0f, 0f),
             Offset(0f, y),
             strokeWidth,
-            alpha = 0.8f
+            alpha = BORDER_ALPHA
         )
     }
 
-fun Modifier.rightBorder(color : Color = Color.LightGray) =
+private fun Modifier.rightBorder(color : Color, strokeWidth : Float = 1f) =
     this.drawBehind {
-        val strokeWidth = 1f
         val y = size.height - strokeWidth / 2
         drawLine(
             color,
             Offset(size.width, 0f),
             Offset(size.width, y),
             strokeWidth,
-            alpha = 0.8f
+            alpha = BORDER_ALPHA
         )
     }
 
@@ -515,8 +542,8 @@ private const val TEST_WIDTH = 412
 private const val TEST_HEIGHT = 892
 
 private val cols = listOf(
-    SummaryTableColumn(1,"", width = 40.dp, isFlag = true ),
-    SummaryTableColumn(2,"ISO", width = 40.dp ),
+    SummaryTableColumn(1,"", width = 40.dp, isImage = true ),
+    SummaryTableColumn(2,"", width = 44.dp ),
     SummaryTableColumn(3,"Name", width = 220.dp, align = Alignment.CenterStart, isSortable = true, isClickable = true, selectedSorting = Sorting.ASC),
     SummaryTableColumn(4,"From", width = 80.dp, isSortable = true),
     SummaryTableColumn(5,"To", width = 80.dp, isSortable = true),
@@ -525,118 +552,61 @@ private val cols = listOf(
     )
 
 private val values = listOf(
-    listOf(
-        "nam", "NAM", "Namibia", "1970", "", "2", "1", "1.00 €"
+    mutableListOf<Any?>(
+        null, "NAM", "Namibia", "1970", "", "2", "1", "1.00 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "usa", "USA", "United States", "1871", "", "1", "1", "234.44 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "", "Taiwan (NR)", "1946", "", "1", "-", "-"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "yug", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia, Democratic Republic of", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "esp", "ESP", "Spain", "1521", "", "3", "4", "1523.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "npl", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    listOf(
+    mutableListOf<Any?>(
         "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
     )
 )
@@ -645,15 +615,35 @@ private val values = listOf(
 @Preview (device = "spec:width=${TEST_WIDTH}dp,height=${TEST_HEIGHT}dp,orientation=portrait")
 @Composable
 fun CountriesPreviewPortrait() {
+    val flag = LocalContext.current.assets.open("usa.png").let {
+        BitmapFactory.decodeStream(it).asImageBitmap()
+    }
+    values.forEach {
+        it[0] = flag
+    }
+
     BanknotesCatalogTheme {
-        SummaryTable(columns = cols, fixedColumns =  2, data = values, onHeaderClick = {_ ->}, onDataClick = {_, _ -> })
+        SummaryTable(
+            columns = cols,
+            fixedColumns = 2,
+            data = values,
+            onHeaderClick = { _ -> },
+            onDataClick = { _ -> }
+        )
     }
 }
 
 @Preview (device = "spec:width=${TEST_WIDTH}dp,height=${TEST_HEIGHT}dp,orientation=landscape")
 @Composable
 fun CountriesPreviewLandscape() {
+    val flag = LocalContext.current.assets.open("usa.png").let {
+        BitmapFactory.decodeStream(it).asImageBitmap()
+    }
+    values.forEach {
+        it[0] = flag
+    }
+
     BanknotesCatalogTheme {
-        SummaryTable(columns = cols, fixedColumns = 3, data = values, onHeaderClick = {_ ->}, onDataClick = {_, _ -> }, isLogged = false)
+        SummaryTable(columns = cols, fixedColumns = 3, data = values, onHeaderClick = {_ ->}, onDataClick = {_ -> }, isLogged = false)
     }
 }

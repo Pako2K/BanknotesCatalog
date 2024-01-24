@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -15,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryType
+import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.ui.parts.Sorting
 import com.pako2k.banknotescatalog.ui.parts.StatsColumn
 import com.pako2k.banknotescatalog.ui.parts.SummaryTable
@@ -22,8 +25,8 @@ import com.pako2k.banknotescatalog.ui.parts.SummaryTableColumn
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 private val cols = mutableListOf(
-    SummaryTableColumn(0,"", width = 38.dp, isFlag = true ),
-    SummaryTableColumn(1,"ISO", width = 44.dp ),
+    SummaryTableColumn(0,"", width = 38.dp, isImage = true ),
+    SummaryTableColumn(1,"", width = 44.dp ),
     SummaryTableColumn(2,"Name", width = 210.dp, align = Alignment.CenterStart, isSortable = true, isClickable = true, selectedSorting = Sorting.ASC),
     SummaryTableColumn(3,"From", width = 80.dp, isSortable = true),
     SummaryTableColumn(4,"To", width = 80.dp, isSortable = true),
@@ -35,53 +38,54 @@ private const val MIN_FIXED_COLS = 2
 fun Countries(
     screenWidth: Dp,
     territories : List<Territory>,
-    territoryTypes : List<TerritoryType>,
+    flags : Map<String, ImageBitmap>,
+    territoryTypes : Map<UInt,TerritoryType>,
     continentFilter : UInt?,
-    sortBy : Int,
+    sortBy : Territory.SortableCol,
     sortingDir : Sorting,
-    sortCallback: (sortByCol : Int)->Unit,
+    sortCallback: (sortBy: Territory.SortableCol)->Unit,
     onCountryClick: (territoryID: UInt)->Unit,
 ) {
     Log.d(stringResource(id = R.string.app_log_tag),"Start Countries")
 
     // Set the column which is sorted and the direction
-    var dataIndex = 0
+    val sortByCol = when(sortBy){
+            Territory.SortableCol.NAME -> 2
+            Territory.SortableCol.START -> 3
+            Territory.SortableCol.END -> 4
+    }
+
+    var subColIndex = 0
     cols.forEach{ col ->
         if (col.isStats){
-            if (dataIndex == sortBy || sortBy == (dataIndex+1)) col.selectedSorting = sortingDir
-            else col.selectedSorting = null
-            col.sortedBy = if (dataIndex == sortBy) StatsColumn.CATALOG else StatsColumn.COLLECTION
-            dataIndex++
+            if (subColIndex == sortByCol || sortByCol == (subColIndex+1))
+                col.selectedSorting = sortingDir
+            else
+                col.selectedSorting = null
+            col.sortedBy = if (subColIndex == sortByCol) StatsColumn.CATALOG else StatsColumn.COLLECTION
+            subColIndex++
         }
         else{
-            if (dataIndex == sortBy) col.selectedSorting = sortingDir
+            if (subColIndex == sortByCol) col.selectedSorting = sortingDir
             else col.selectedSorting = null
         }
-        dataIndex++
+        subColIndex++
     }
 
-    val data : MutableList<List<String>> = mutableListOf()
+    val data : MutableList<List<Any?>> = mutableListOf()
 
-    // Sort data
-    val sortedTerritories = when(sortBy){
-        2 -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.name } else territories
-        3 -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.start } else territories.sortedBy { it.start }
-        4 -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.end } else territories.sortedBy { it.end }
-        else -> territories
-    }
-
-    for (ter in sortedTerritories){
-        val territoryType = territoryTypes.find {it.id == ter.territoryTypeId}
-        val terTypSuffix =   if (territoryType?.abbreviation == "Ind") ""
-                            else " [${territoryType?.abbreviation}]"
-        val flagName = ter.iso3?.lowercase()?:ter.name.lowercase().replace(",", "").replace(" ", "")
+    // Create data collection for the table
+    /* TODO : move to the UIState? and/or to the repository?*/
+    for (ter in territories){
+        val territoryType = territoryTypes[ter.territoryTypeId]?.abbreviation?:""
+        val terTypSuffix =  if (territoryType == "Ind") "" else " [${territoryType}]"
 
         if (continentFilter == null || ter.continentId == continentFilter)
             data.add(
                 listOf(
-                    flagName,
+                    flags[ter.flagName],
                     ter.iso3?:"",
-                    ter.name + terTypSuffix,
+                    Pair(ter.id, ter.name + terTypSuffix),
                     ter.start.toString(),
                     ter.end?.toString()?:""
                 )
@@ -96,8 +100,13 @@ fun Countries(
             columns = cols,
             fixedColumns = fixedColumns,
             data = data,
-            onHeaderClick = sortCallback,
-            onDataClick = { rowIndex, dataColIndex -> if (dataColIndex == 2) onCountryClick(territories[rowIndex].id) },
+            onHeaderClick = {when(it){
+                2 -> sortCallback(Territory.SortableCol.NAME)
+                3 -> sortCallback(Territory.SortableCol.START)
+                4 -> sortCallback(Territory.SortableCol.END)
+                else -> sortCallback(Territory.SortableCol.NAME)
+            }},
+            onDataClick = onCountryClick,
             modifier = Modifier.padding(padding)
         )
     }
@@ -124,12 +133,14 @@ fun CountriesPreview() {
             TerritoryType(2u, "Territory", "T", "uri1" ),
             TerritoryType(3u, "Not Recognized State", "NR", "uri1" ),
         )
+        val flags = FlagsLocalDataSource(LocalContext.current.assets).getFlagsSync()
         Countries(
             screenWidth = TEST_WIDTH.dp,
             territories = countries,
-            territoryTypes = territoryTypes,
+            flags = flags,
+            territoryTypes = territoryTypes.associateBy { it.id },
             continentFilter = null,
-            sortBy = 2,
+            sortBy = Territory.SortableCol.NAME,
             sortingDir = Sorting.ASC,
             onCountryClick = {},
             sortCallback = {}

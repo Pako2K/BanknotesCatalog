@@ -36,7 +36,6 @@ import com.pako2k.banknotescatalog.ui.parts.FrontPage
 import com.pako2k.banknotescatalog.ui.parts.Header
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
-import com.pako2k.banknotescatalog.ui.parts.Sorting
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.views.Countries
 
@@ -72,15 +71,15 @@ fun MainScreen(
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
 
     val uiState by mainViewModel.uiState.collectAsState()
-    val uiData = mainViewModel.mainUiData
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
     val defaultRoute = stringResource(id = R.string.menu_not_selected)
 
-    val mainMenuOptionStr = backStackEntry?.destination?.route ?: defaultRoute
+    val routeStr = backStackEntry?.destination?.route ?: defaultRoute
+
     val mainMenuOption : MenuOption? =
-        if (mainMenuOptionStr != defaultRoute) MenuOption.valueOf(mainMenuOptionStr)
+        if (routeStr != defaultRoute && null != MenuOption.values().find() { it.name == routeStr }) MenuOption.valueOf(routeStr)
         else null
 
     Scaffold (
@@ -92,7 +91,7 @@ fun MainScreen(
                 if (mainMenuOption != null) {
                     ContinentFilter(
                         windowWidth = windowSize.widthSizeClass,
-                        continents = uiData.continents,
+                        continents = mainViewModel.repository.continents.values.toList(),
                         selectedContinentId = uiState.selectedContinent,
                         onclick = { mainViewModel.setContinent(it) }
                     )
@@ -152,12 +151,13 @@ fun MainScreen(
             composable(MenuOption.COUNTRIES.name){
                 Countries(
                     screenWidth = screenWidth,
-                    territories = uiData.territories,
-                    territoryTypes = uiData.territoryTypes,
+                    territories = mainViewModel.repository.territories,
+                    flags = mainViewModel.repository.getFlags(),
+                    territoryTypes = mainViewModel.repository.territoryTypes,
                     continentFilter = uiState.selectedContinent,
                     sortBy = uiState.territoriesSortedBy,
                     sortingDir = uiState.territoriesSortingDir,
-                    onCountryClick = {/*TODO*/},
+                    onCountryClick = { navController.navigate("COUNTRY")},
                     sortCallback = { mainViewModel.sortTerritoriesBy(it) }
                     )
             }
@@ -175,6 +175,9 @@ fun MainScreen(
             }
             composable(MenuOption.LOG_IN.name){
                 Text ("SIGN IN / SIGN UP")
+            }
+            composable("COUNTRY"){
+                Text ("SELECTED COUNTRY")
             }
         }
 

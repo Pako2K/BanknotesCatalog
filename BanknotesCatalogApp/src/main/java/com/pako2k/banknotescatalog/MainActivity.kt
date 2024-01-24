@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                 val windowSizeClass : WindowSizeClass = calculateWindowSizeClass(this)
 
                 val displayMetrics: DisplayMetrics = applicationContext.resources.displayMetrics
-                val screenWidth : Dp = Dp(displayMetrics.widthPixels / displayMetrics.density)
+                val screenWidth = Dp(displayMetrics.widthPixels / displayMetrics.density)
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Log.d(stringResource(id = R.string.app_log_tag),"Start Main Surface")
 
-                    // Create the application Viewmodel using the factory
+                    // Create the application ViewModel using the factory
                     val model: MainViewModel =  viewModel(factory = MainViewModel.Factory)
                     BanknotesCatalogUI(windowSizeClass, screenWidth, model)
                 }
