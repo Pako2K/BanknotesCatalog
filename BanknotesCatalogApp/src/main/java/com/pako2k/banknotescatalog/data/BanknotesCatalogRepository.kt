@@ -13,6 +13,7 @@ class BanknotesCatalogRepository private constructor(
     private val banknotesNetworkDataSource: BanknotesNetworkDataSource
 ){
     private var flags : Map<String,ImageBitmap> = mapOf()
+
     var continents : Map<UInt, Continent> = mapOf()
         private set
     var territoryTypes : Map<UInt, TerritoryType> = mapOf()
@@ -37,21 +38,20 @@ class BanknotesCatalogRepository private constructor(
     }
 
     suspend fun fetchContinents() {
-        continents = banknotesNetworkDataSource.getContinents().associateBy() { cont -> cont.id }
+        continents = banknotesNetworkDataSource.getContinents().associateBy { cont -> cont.id }
     }
 
     suspend fun fetchTerritoryTypes() {
-        territoryTypes = banknotesNetworkDataSource.getTerritoryTypes().associateBy() { type -> type.id }
+        territoryTypes = banknotesNetworkDataSource.getTerritoryTypes().associateBy { type -> type.id }
     }
 
     // Use after TerritoryTypes and Continents are fetched
     suspend fun fetchTerritories() {
-        territories = banknotesNetworkDataSource.getTerritories().filter(){ ter ->
+        territories = banknotesNetworkDataSource.getTerritories().filter { ter ->
             continents[ter.continentId]  != null
         }
     }
 
-    fun getFlags() = flags
 
     fun sortTerritories(sortBy : Territory.SortableCol , sortingDir : Sorting){
         // Sort data
@@ -61,4 +61,91 @@ class BanknotesCatalogRepository private constructor(
             Territory.SortableCol.END -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.end } else territories.sortedBy { it.end }
         }
     }
+
+    fun getTerritoriesData() : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        for (ter in territories){
+            tmp.add(territoryToMap(ter))
+        }
+
+        return tmp
+    }
+
+    fun getTerritoriesDataByContinent (byContinent : UInt?) : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        if (byContinent == null)
+            for (ter in territories){
+                tmp.add(territoryToMap(ter))
+            }
+        else
+            for (ter in territories){
+                if (ter.continentId == byContinent)
+                    tmp.add(territoryToMap(ter))
+            }
+
+        return tmp
+    }
+
+    fun getTerritoriesDataByType (byTerritoryType: UInt?) : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        if (byTerritoryType == null)
+            for (ter in territories){
+                tmp.add(territoryToMap(ter))
+            }
+        else
+            for (ter in territories){
+                if (ter.territoryTypeId == byTerritoryType)
+                    tmp.add(territoryToMap(ter))
+            }
+
+        return tmp
+    }
+
+    fun getTerritoriesDataByStart (
+        fromStart : Int?,
+        toStart : Int?
+    ) : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        for (ter in territories){
+            if (((fromStart == null) || ( ter.start >= fromStart ))
+                && ((toStart == null) || (ter.start <= toStart))
+            ){
+                tmp.add(territoryToMap(ter))
+            }
+        }
+        return tmp
+    }
+
+    fun getTerritoriesDataByEnd (
+        fromEnd : Int?,
+        toEnd : Int?
+    ) : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        for (ter in territories){
+            if (((fromEnd == null) || (ter.end != null && ter.end >= fromEnd))
+                && ((toEnd == null) || (ter.end != null && ter.end <= toEnd))
+            ){
+                tmp.add(territoryToMap(ter))
+            }
+        }
+        return tmp
+    }
+
+    private fun territoryToMap(territory : Territory) : Map<String, Any?>{
+        return mapOf(
+            "id" to territory.id,
+            "iso3" to territory.iso3,
+            "flag" to flags[territory.flagName],
+            "name" to territory.name,
+            "type" to territoryTypes[territory.territoryTypeId]!!.abbreviation,
+            "start" to territory.start,
+            "end" to territory.end
+        )
+    }
+
 }

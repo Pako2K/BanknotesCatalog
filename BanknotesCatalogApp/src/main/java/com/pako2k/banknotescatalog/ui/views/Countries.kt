@@ -7,22 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryType
-import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.ui.parts.Sorting
 import com.pako2k.banknotescatalog.ui.parts.StatsColumn
 import com.pako2k.banknotescatalog.ui.parts.SummaryTable
 import com.pako2k.banknotescatalog.ui.parts.SummaryTableColumn
-import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 private val cols = mutableListOf(
     SummaryTableColumn(0,"", width = 38.dp, isImage = true ),
@@ -37,10 +31,7 @@ private const val MIN_FIXED_COLS = 2
 @Composable
 fun Countries(
     screenWidth: Dp,
-    territories : List<Territory>,
-    flags : Map<String, ImageBitmap>,
-    territoryTypes : Map<UInt,TerritoryType>,
-    continentFilter : UInt?,
+    territoriesData : List<Map<String,Any?>>,
     sortBy : Territory.SortableCol,
     sortingDir : Sorting,
     sortCallback: (sortBy: Territory.SortableCol)->Unit,
@@ -74,22 +65,17 @@ fun Countries(
 
     val data : MutableList<List<Any?>> = mutableListOf()
 
-    // Create data collection for the table
-    /* TODO : move to the UIState? and/or to the repository?*/
-    for (ter in territories){
-        val territoryType = territoryTypes[ter.territoryTypeId]?.abbreviation?:""
-        val terTypSuffix =  if (territoryType == "Ind") "" else " [${territoryType}]"
-
-        if (continentFilter == null || ter.continentId == continentFilter)
-            data.add(
-                listOf(
-                    flags[ter.flagName],
-                    ter.iso3?:"",
-                    Pair(ter.id, ter.name + terTypSuffix),
-                    ter.start.toString(),
-                    ter.end?.toString()?:""
-                )
+    for(ter in territoriesData){
+        val terTypSuffix =  if (ter["type"] == "Ind") "" else " [${ter["type"]}]"
+        data.add(
+            listOf(
+                ter["flag"],
+                ter["iso3"] ?:"",
+                Pair(ter["id"], ter["name"].toString() + terTypSuffix),
+                ter["start"].toString(),
+                ter["end"]?.toString()?:""
             )
+        )
     }
 
     val totalWidth = (cols.sumOf { it.width.value.toDouble() }).toFloat()
@@ -113,8 +99,8 @@ fun Countries(
 }
 
 
-
-private const val TEST_WIDTH = 412
+/*
+private const val TEST_WIDTH = 400
 
 
 @Preview (widthDp = TEST_WIDTH)
@@ -125,7 +111,6 @@ fun CountriesPreview() {
             Territory(1u, "Namibia", "NAM",5u,1u, 1913, uri = "uri1" ),
             Territory(2u, "Argentina", "ARG",1u,2u, 1923, uri = "uri1" ),
             Territory(3u, "United States", "USA",5u,1u, 1923, uri = "uri1" ),
-            Territory(4u, "Biafra", null,2u,3u, 1923, 2001, uri = "uri1" ),
             Territory(5u, "Laos", "LAO",4u,1u, 1923, uri = "uri1" ),
         )
         val territoryTypes = listOf(
@@ -147,3 +132,5 @@ fun CountriesPreview() {
         )
     }
 }
+
+ */

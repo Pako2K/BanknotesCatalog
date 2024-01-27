@@ -33,6 +33,9 @@ class MainViewModel private constructor(
     var repository : BanknotesCatalogRepository
         private set
 
+    var territoriesData : List<Map<String,Any?>>
+        private set
+
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
         val Factory : ViewModelProvider.Factory = viewModelFactory {
@@ -56,6 +59,7 @@ class MainViewModel private constructor(
         val apiClient = BanknotesAPIClient(url, timeout)
 
         repository = BanknotesCatalogRepository.create(ctx, apiClient)
+        territoriesData = listOf()
 
         // Initialize flags
         viewModelScope.launch {
@@ -88,6 +92,8 @@ class MainViewModel private constructor(
             // Get Territories
             var result : ComponentState = try {
                 repository.fetchTerritories()
+
+                territoriesData = repository.getTerritoriesData()
                 ComponentState.DONE
             }
             catch (exc : Exception){
@@ -111,10 +117,12 @@ class MainViewModel private constructor(
 
 
 
-    fun setContinent(continentId : UInt) {
+    fun setContinentFilter(continentId : UInt) {
         val newSelection =
             if (continentId == uiState.value.selectedContinent) null
             else continentId
+
+        territoriesData = repository.getTerritoriesDataByContinent(newSelection)
 
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -134,6 +142,8 @@ class MainViewModel private constructor(
                 Sorting.ASC
 
         repository.sortTerritories(sortBy, newSortingDir)
+
+        territoriesData = repository.getTerritoriesDataByContinent(_mainUiState.value.selectedContinent)
 
         _mainUiState.update { currentState ->
             currentState.copy(

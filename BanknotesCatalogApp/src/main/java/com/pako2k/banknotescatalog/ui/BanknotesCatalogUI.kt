@@ -24,10 +24,12 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.MainViewModel
@@ -38,6 +40,7 @@ import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.views.Countries
+import com.pako2k.banknotescatalog.ui.views.Country
 
 
 @Composable
@@ -79,7 +82,7 @@ fun MainScreen(
     val routeStr = backStackEntry?.destination?.route ?: defaultRoute
 
     val mainMenuOption : MenuOption? =
-        if (routeStr != defaultRoute && null != MenuOption.values().find() { it.name == routeStr }) MenuOption.valueOf(routeStr)
+        if (routeStr != defaultRoute && null != MenuOption.values().find { it.name == routeStr }) MenuOption.valueOf(routeStr)
         else null
 
     Scaffold (
@@ -93,7 +96,7 @@ fun MainScreen(
                         windowWidth = windowSize.widthSizeClass,
                         continents = mainViewModel.repository.continents.values.toList(),
                         selectedContinentId = uiState.selectedContinent,
-                        onclick = { mainViewModel.setContinent(it) }
+                        onclick = { mainViewModel.setContinentFilter(it) },
                     )
                 }
                 MainMenu(
@@ -106,27 +109,6 @@ fun MainScreen(
                 )
             }
         },
-        //floatingActionButtonPosition = FabPosition.End,
-/*        floatingActionButton = {
-            ElevatedButton(
-                shape = RoundedCornerShape(4.dp),
-                elevation = ButtonDefaults.buttonElevation(4.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .size(40.dp)
-                    .alpha(0.75f),
-                onClick = { /*TODO*/ }
-            ) {
-                Icon(
-                    painter =  painterResource(R.drawable.login_icon),
-                    contentDescription = "Login Icon",
-                    tint =  MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-        }
-
- */
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -151,13 +133,12 @@ fun MainScreen(
             composable(MenuOption.COUNTRIES.name){
                 Countries(
                     screenWidth = screenWidth,
-                    territories = mainViewModel.repository.territories,
-                    flags = mainViewModel.repository.getFlags(),
-                    territoryTypes = mainViewModel.repository.territoryTypes,
-                    continentFilter = uiState.selectedContinent,
+                    territoriesData = mainViewModel.territoriesData,
                     sortBy = uiState.territoriesSortedBy,
                     sortingDir = uiState.territoriesSortingDir,
-                    onCountryClick = { navController.navigate("COUNTRY")},
+                    onCountryClick = {
+                        navController.navigate("COUNTRY/$it")
+                                     },
                     sortCallback = { mainViewModel.sortTerritoriesBy(it) }
                     )
             }
@@ -176,8 +157,10 @@ fun MainScreen(
             composable(MenuOption.LOG_IN.name){
                 Text ("SIGN IN / SIGN UP")
             }
-            composable("COUNTRY"){
-                Text ("SELECTED COUNTRY")
+            composable("COUNTRY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
+                Country(
+                    territory = mainViewModel.repository.territories.find { it.id == (navBackStackEntry.arguments?.getInt("id")?.toUInt() ?: 1u)} ?: mainViewModel.repository.territories[0]
+                )
             }
         }
 

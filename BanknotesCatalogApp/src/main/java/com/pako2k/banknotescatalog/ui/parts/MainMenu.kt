@@ -25,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
@@ -47,7 +46,6 @@ enum class MenuOption (@StringRes val textId : Int, @DrawableRes val iconId : In
     COLLECTION (textId = R.string.menu_my_collection, iconId = R.drawable.m_collection_icon),
     LOG_IN (textId = R.string.menu_login, iconId = R.drawable.login_icon)
 }
-
 
 @Composable
 fun MainMenu(
@@ -71,7 +69,7 @@ fun MainMenu(
                 )
                 .height(4.dp)
                 .fillMaxWidth()
-                .alpha(0.25f)
+                .alpha(0.75f)
         )
 
         Row(
@@ -147,7 +145,7 @@ fun MainMenuOption(
 
 
 
-private const val TEST_WIDTH = 600
+private const val TEST_WIDTH = 740
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview (widthDp = TEST_WIDTH)
@@ -155,7 +153,9 @@ private const val TEST_WIDTH = 600
 fun MainMenuPreview() {
     BanknotesCatalogTheme {
         MainMenu(isLoggedIn = false,
-            windowSize = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,600.dp)),
+            selectedOption = MenuOption.COUNTRIES,
+            windowSize = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,400.dp)),
             onClick = {})
     }
 }
+
