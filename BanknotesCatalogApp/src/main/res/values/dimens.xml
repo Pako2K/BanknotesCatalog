@@ -9,7 +9,8 @@
 
     <dimen name="header_height">30dp</dimen>
 
-    <dimen name="continent_item_height">36dp</dimen>
+    <dimen name="continent_item_height">30dp</dimen>
+    <dimen name="continent_icon_height">20dp</dimen>
 
     <dimen name="shadowElevation">4dp</dimen>
 
@@ -20,5 +21,6 @@
     <dimen name="data_padding">@dimen/xs_padding</dimen>
     <dimen name="flag_size">20dp</dimen>
     <dimen name="narrow_col_size">50dp</dimen>
+
 
 </resources>

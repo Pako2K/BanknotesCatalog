@@ -5,18 +5,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,7 +23,6 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -42,7 +40,15 @@ import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 
-@OptIn(ExperimentalLayoutApi::class)
+val ContinentIconMap : Map<String,Int> = mapOf(
+    "Africa" to R.drawable.africa,
+    "North America" to R.drawable.northamerica,
+    "South America" to R.drawable.southamerica,
+    "Asia" to R.drawable.asia,
+    "Europe" to R.drawable.europe,
+    "Oceania" to R.drawable.oceania
+)
+
 @Composable
 fun ContinentFilter (
     windowWidth: WindowWidthSizeClass,
@@ -70,26 +76,49 @@ fun ContinentFilter (
                 contentDescription = "",
                 modifier = Modifier.fillMaxSize()
             )
-            FlowRow(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                maxItemsInEachRow = columns,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = dimensionResource(id = R.dimen.medium_padding))
-            ) {
-                for (cont in continents) {
-                    ContinentItem(
-                        continent = cont,
-                        selected = cont.id == selectedContinentId,
-                        onClick = onclick,
-                        modifier = Modifier.weight(1f)
+            Column {
+                ContinentFilterRow(
+                    modifier = Modifier
+                        .padding(vertical = dimensionResource(id = R.dimen.small_padding)),
+                    selectedContinentId = selectedContinentId,
+                    continents = continents.subList(0, columns),
+                    onclick = onclick
+                )
+                if (columns< continents.size)
+                    ContinentFilterRow(
+                        modifier = Modifier
+                            .padding(bottom = dimensionResource(id = R.dimen.small_padding)),
+                        selectedContinentId = selectedContinentId,
+                        continents = continents.drop(columns),
+                        onclick = onclick
                     )
-                }
             }
         }
     }
 }
 
+@Composable
+fun ContinentFilterRow(
+    continents: List<Continent>,
+    selectedContinentId : UInt?,
+    modifier : Modifier,
+    onclick: (clickedContinent : UInt) -> Unit
+){
+    Row(
+        modifier = modifier
+            .padding(horizontal = dimensionResource(id = R.dimen.small_padding))
+            .fillMaxWidth()
+    ) {
+        for (cont in continents) {
+            ContinentItem(
+                continent = cont,
+                selected = cont.id == selectedContinentId,
+                onClick = onclick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
 
 
 @Composable
@@ -114,39 +143,50 @@ fun ContinentItem(continent: Continent,
                 )
         else
             modifier
-
-    Box (contentAlignment = Alignment.Center, modifier = modifier){
+    Box(
+        modifier = modifier
+            .height(dimensionResource(id = R.dimen.continent_item_height))
+    ) {
         TextButton(
             contentPadding = PaddingValues(0.dp),
             onClick = {
                 onClick(continent.id)
             },
             modifier = selectedModifier
-                .fillMaxWidth(0.9f)
-                .height(dimensionResource(id = R.dimen.continent_item_height)),
+                .fillMaxWidth()
+                .padding(horizontal = dimensionResource(id = R.dimen.small_padding)),
         ) {
-            Text(
-                text = continent.name,
-                overflow = TextOverflow.Ellipsis,
-                color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelLarge.copy(
-                    shadow = null
+            Row {
+                Icon(
+                    painter = painterResource(id = ContinentIconMap[continent.name] ?: 0),
+                    contentDescription = null,
+                    tint = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.height(dimensionResource(id = R.dimen.continent_icon_height))
                 )
-            )
+                Text(
+                    text = continent.name,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelLarge.copy(
+                        shadow = null
+                    )
+                )
+            }
         }
     }
 }
 
 
 
-private const val TEST_WIDTH = 400
+private const val TEST_WIDTH = 390
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview(widthDp = TEST_WIDTH)
 @Composable
 fun ContinentFilterPreview() {
     BanknotesCatalogTheme {
-        ContinentFilter(WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,600.dp)).widthSizeClass,
+        ContinentFilter(
+            windowWidth = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,600.dp)).widthSizeClass,
             continents = listOf(
                 Continent(1u,"Africa"),
                 Continent(2u,"North America"),
@@ -155,6 +195,7 @@ fun ContinentFilterPreview() {
                 Continent(5u,"Oceania"),
                 Continent(6u, "Europe")
             ),
+            selectedContinentId = 2u,
             onclick = {})
     }
 }
