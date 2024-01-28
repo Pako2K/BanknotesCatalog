@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,6 +55,7 @@ import com.pako2k.banknotescatalog.ui.theme.color_table_link
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_even
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_odd
 import com.pako2k.banknotescatalog.ui.theme.typographySans
+import kotlinx.coroutines.launch
 
 
 // Non Composable Constants
@@ -108,6 +110,7 @@ fun SummaryTable(
         if (fixedColumns < columns.size) columns.drop(fixedColumns)
         else null
 
+    val coroutineScope = rememberCoroutineScope()
 
     Surface(
         shadowElevation = dimensionResource(id = R.dimen.shadowElevation),
@@ -136,14 +139,19 @@ fun SummaryTable(
                     onClick = onDataClick
                 )
             }
+
             if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
                 Icon(
                     painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
-                    //tint = MaterialTheme.colorScheme.outlineVariant,
                     contentDescription = null,
                     modifier = Modifier
                         .alpha(0.8f)
                         .offset(x = dimensionResource(id = R.dimen.small_padding))
+                        .clickable {
+                            coroutineScope.launch{
+                                hScrollState.scrollTo(hScrollState.maxValue)
+                            }
+                        }
                 )
         }
 
