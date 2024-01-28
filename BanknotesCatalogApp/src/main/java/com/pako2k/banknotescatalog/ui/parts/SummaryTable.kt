@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -114,13 +115,26 @@ fun SummaryTable(
     ) {
         Column{
             // Header
-            SummaryTableHeader(
-                fixedColumns = fixedColumnsList,
-                scrollableColumns = scrollColumnsList,
-                isLogged = isLogged,
-                horizontalScroll = hScrollState,
-                onClick = onHeaderClick
-            )
+            Box(
+                //modifier = Modifier.height(IntrinsicSize.Min)
+                contentAlignment = Alignment.CenterEnd
+            ){
+                SummaryTableHeader(
+                    fixedColumns = fixedColumnsList,
+                    scrollableColumns = scrollColumnsList,
+                    isLogged = isLogged,
+                    horizontalScroll = hScrollState,
+                    onClick = onHeaderClick
+                )
+                if (scrollColumnsList != null && hScrollState.value < hScrollState.maxValue)
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
+                        tint = MaterialTheme.colorScheme.outlineVariant,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .alpha(0.7f)
+                    )
+            }
 
             // Rows
             SummaryTableData(
@@ -131,6 +145,7 @@ fun SummaryTable(
                 onClick = onDataClick
             )
         }
+
     }
 
 }
@@ -439,6 +454,9 @@ fun ClickableTextDataCell(
         modifier = modifier
             .width(col.width)
             .padding(dimensionResource(id = R.dimen.data_padding))
+            .clickable {
+                onClick(value.first)
+            }
     ) {
         Text(
             text = value.second,
@@ -448,9 +466,6 @@ fun ClickableTextDataCell(
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
             modifier = Modifier
-                .clickable {
-                    onClick(value.first)
-                }
                 .padding(dimensionResource(id = R.dimen.small_padding))
         )
     }
