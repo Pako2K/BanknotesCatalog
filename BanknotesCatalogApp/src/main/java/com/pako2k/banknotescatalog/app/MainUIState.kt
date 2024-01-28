@@ -9,9 +9,12 @@ enum class ComponentState {
     FAILED
 }
 
-data class MainUiState (
-    val mainInitialization : ComponentState = ComponentState.LOADING,
+data class MainUiInitializationState (
+    val state : ComponentState = ComponentState.LOADING
+)
 
+
+data class MainUiState (
     val selectedContinent: UInt? = null,
 
     val userLoggedIn : Boolean = false,

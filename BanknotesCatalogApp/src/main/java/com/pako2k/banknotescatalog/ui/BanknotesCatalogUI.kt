@@ -1,13 +1,11 @@
 package com.pako2k.banknotescatalog.ui
 
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -16,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -41,6 +38,7 @@ import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.views.Countries
 import com.pako2k.banknotescatalog.ui.views.Country
+import com.pako2k.banknotescatalog.ui.views.Currencies
 
 
 @Composable
@@ -52,14 +50,15 @@ fun BanknotesCatalogUI(
     Log.d(stringResource(R.string.app_log_tag),"Start BanknotesCatalogUI")
 
     // uiState as state, to trigger recompositions of the whole UI
-    val uiState by mainViewModel.uiState.collectAsState()
+    //val uiState by mainViewModel.uiState.collectAsState()
+    val initializationState by mainViewModel.initializationState.collectAsState()
 
-    if ( uiState.mainInitialization == ComponentState.DONE){
+    if ( initializationState.state == ComponentState.DONE){
         MainScreen(windowSize, screenWidth, mainViewModel)
     }
     else
         FrontPage(
-            uiState.mainInitialization,
+            initializationState.state,
             modifier = Modifier.fillMaxSize()
         )
 }
@@ -115,13 +114,6 @@ fun MainScreen(
             startDestination = defaultRoute,
             modifier = Modifier
                 .padding(innerPadding)
-                .background(
-                    brush = Brush.verticalGradient(
-                        0.0f to if (mainMenuOption == null) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.background,
-                        0.9f to MaterialTheme.colorScheme.background
-                    )
-                )
         ) {
             composable(defaultRoute){
                 FrontPage(
@@ -140,10 +132,20 @@ fun MainScreen(
                         navController.navigate("COUNTRY/$it")
                                      },
                     sortCallback = { mainViewModel.sortTerritoriesBy(it) }
-                    )
+                )
             }
             composable(MenuOption.CURRENCIES.name){
-                Text ("CURRENCIES")
+                Currencies(
+                    //screenWidth = screenWidth,
+                    //currenciesData = listOf(),
+                    //sortBy = uiState.territoriesSortedBy,
+                    //sortingDir = uiState.territoriesSortingDir,
+                    //onCurrencyClick = {
+                    //},
+                    //onCountryClick = {
+                    //},
+                    //sortCallback = { }
+                )
             }
             composable(MenuOption.DENOMINATIONS.name){
                 Text ("DENOMINATIONS")

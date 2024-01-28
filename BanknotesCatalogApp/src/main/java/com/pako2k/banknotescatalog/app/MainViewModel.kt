@@ -22,12 +22,17 @@ import kotlinx.coroutines.launch
 // Class implementing the Application Logic
 class MainViewModel private constructor(
         application: Application,
-    ) : ViewModel () {
+    ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
     private val _mainUiState = MutableStateFlow(MainUiState())
     // Public property to read the UI state
     val uiState = _mainUiState.asStateFlow()
+
+    // Private so it cannot be updated outside this MainViewModel
+    private val _mainUiInitializationState = MutableStateFlow(MainUiInitializationState())
+    // Public property to read the UI state
+    val initializationState = _mainUiInitializationState.asStateFlow()
 
     // Private set so it cannot be updated outside this MainViewModel
     var repository : BanknotesCatalogRepository
@@ -103,9 +108,9 @@ class MainViewModel private constructor(
 
             if (job.await() == ComponentState.FAILED) result = ComponentState.FAILED
 
-            _mainUiState.update {currentState ->
+            _mainUiInitializationState.update {currentState ->
                 currentState.copy(
-                    mainInitialization = result
+                    state = result
                 )
             }
 

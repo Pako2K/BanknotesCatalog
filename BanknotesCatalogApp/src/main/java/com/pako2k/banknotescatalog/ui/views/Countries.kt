@@ -22,8 +22,8 @@ private val cols = mutableListOf(
     SummaryTableColumn(0,"", width = 38.dp, isImage = true ),
     SummaryTableColumn(1,"", width = 44.dp ),
     SummaryTableColumn(2,"Name", width = 210.dp, align = Alignment.CenterStart, isSortable = true, isClickable = true, selectedSorting = Sorting.ASC),
-    SummaryTableColumn(3,"From", width = 80.dp, isSortable = true),
-    SummaryTableColumn(4,"To", width = 80.dp, isSortable = true),
+    SummaryTableColumn(3,"Founded", width = 80.dp, isSortable = true),
+    SummaryTableColumn(4,"Extinct", width = 80.dp, isSortable = true),
 )
 
 private const val MIN_FIXED_COLS = 2
