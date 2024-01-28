@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -126,13 +127,14 @@ fun SummaryTable(
                     horizontalScroll = hScrollState,
                     onClick = onHeaderClick
                 )
-                if (scrollColumnsList != null && hScrollState.value < hScrollState.maxValue)
+                if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
                     Icon(
                         painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
                         tint = MaterialTheme.colorScheme.outlineVariant,
                         contentDescription = null,
                         modifier = Modifier
-                            .alpha(0.7f)
+                            .alpha(0.8f)
+                            .offset(x = dimensionResource(id = R.dimen.small_padding))
                     )
             }
 
