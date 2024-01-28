@@ -6,7 +6,7 @@
 
     <string name="menu_countries">Territories</string>
     <string name="menu_currencies">Currencies</string>
-    <string name="menu_values">Denominations</string>
+    <string name="menu_values">Values</string>
     <string name="menu_years">Years</string>
     <string name="menu_my_collection">My Collection</string>
     <string name="menu_login">Log in</string>

@@ -64,13 +64,11 @@ val myTypography = Typography(
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.Serif,
-        fontSize = 14.sp,
-        shadow = displayDarkShadow
+        fontSize = 12.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.Serif,
-        fontSize = 12.sp,
-        shadow = displayDarkShadow
+        fontSize = 11.sp,
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.Serif,

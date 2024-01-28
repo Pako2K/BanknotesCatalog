@@ -9,6 +9,9 @@
 
     <dimen name="header_height">30dp</dimen>
 
+    <dimen name="main_menu_icon_size_big">28dp</dimen>
+    <dimen name="main_menu_icon_size_small">36dp</dimen>
+
     <dimen name="continent_item_height">30dp</dimen>
     <dimen name="continent_icon_height">20dp</dimen>
 

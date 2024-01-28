@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -78,74 +79,97 @@ fun MainMenu(
             modifier = modifier
                 .fillMaxWidth()
                 .background(Color.White)
+                .padding(vertical = dimensionResource(id = R.dimen.small_padding))
         ) {
-            val showName = windowSize.widthSizeClass in listOf(WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded)
+            val isNarrowScreen = windowSize.widthSizeClass == WindowWidthSizeClass.Compact
             for (option in MenuOption.values().dropLast(2)){
                 MainMenuOption(
                     option = option,
-                    showName = showName,
+                    isNarrowScreen = isNarrowScreen,
                     isSelected = option == selectedOption,
                     onClick = onClick
                 )
             }
             val lastOption =  if (isLoggedIn) MenuOption.COLLECTION else MenuOption.LOG_IN
 
-            MainMenuOption(option = lastOption, showName = showName, isSelected = lastOption == selectedOption, onClick = onClick)
+            MainMenuOption(
+                option = lastOption,
+                isNarrowScreen = isNarrowScreen,
+                isSelected = lastOption == selectedOption,
+                onClick = onClick)
         }
     }
 }
 
 @Composable
 fun MainMenuOption(
-    modifier: Modifier = Modifier,
     option : MenuOption,
-    showName : Boolean,
+    isNarrowScreen : Boolean,
     isSelected : Boolean,
     onClick: (clickedOption : MenuOption) -> Unit
 ) {
-    Row (
-        modifier = modifier
-            .padding(dimensionResource(id = R.dimen.small_padding))
-    ){
-        Button(
-            onClick = { onClick(option) },
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.White,
-                disabledContainerColor = Color.White),
-            shape = MaterialTheme.shapes.small
-        ) {
-            val iconColor = MaterialTheme.colorScheme.primary
+    Button(
+        onClick = { onClick(option) },
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.White,
+            disabledContainerColor = Color.White),
+        shape = MaterialTheme.shapes.small
+    ) {
+        val iconColor = MaterialTheme.colorScheme.primary
+        if(isNarrowScreen) {
+            Column (
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(dimensionResource(id = R.dimen.medium_padding))
+            ) {
+                MainMenuOptionContent(
+                    option = option,
+                    color = iconColor,
+                    iconSize = dimensionResource(id = R.dimen.main_menu_icon_size_small),
+                    textStyle = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+        else{
             Row (
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.medium_padding))
             ) {
-                val iconSize : Dp = when (showName) {
-                    true -> 28.dp
-                    false -> 36.dp
-                }
-                Icon(
-                    painter = painterResource(option.iconId),
-                    contentDescription = "${stringResource(id = option.textId)} Icon",
-                    tint = iconColor,
-                    modifier = Modifier.size(iconSize)
+                MainMenuOptionContent(
+                    option = option,
+                    color = iconColor,
+                    iconSize = dimensionResource(id = R.dimen.main_menu_icon_size_big),
+                    textStyle = MaterialTheme.typography.displaySmall
                 )
-                if(showName) {
-                    Text(
-                        text = stringResource(id = option.textId),
-                        color = iconColor,
-                        style = MaterialTheme.typography.displaySmall,
-                        modifier = Modifier.padding(start = dimensionResource(id = R.dimen.small_padding))
-                    )
-                }
             }
         }
     }
 }
 
+@Composable
+fun MainMenuOptionContent(
+    option : MenuOption,
+    color : Color,
+    iconSize : Dp,
+    textStyle: TextStyle
+){
+    Icon(
+        painter = painterResource(option.iconId),
+        contentDescription = "${stringResource(id = option.textId)} Icon",
+        tint = color,
+        modifier = Modifier.size(iconSize)
+    )
+    Text(
+        text = stringResource(id = option.textId),
+        color = color,
+        modifier = Modifier.padding(start = dimensionResource(id = R.dimen.small_padding)),
+        style = textStyle
+    )
+}
 
 
-private const val TEST_WIDTH = 740
+private const val TEST_WIDTH = 600
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview (widthDp = TEST_WIDTH)
