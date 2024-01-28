@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -114,12 +113,12 @@ fun SummaryTable(
         shadowElevation = dimensionResource(id = R.dimen.shadowElevation),
         modifier = modifier
     ) {
-        Column{
-            // Header
-            Box(
-                //modifier = Modifier.height(IntrinsicSize.Min)
-                contentAlignment = Alignment.CenterEnd
-            ){
+        Box(
+            //modifier = Modifier.height(IntrinsicSize.Min)
+            contentAlignment = Alignment.CenterEnd
+        ){
+            Column{
+                // Header
                 SummaryTableHeader(
                     fixedColumns = fixedColumnsList,
                     scrollableColumns = scrollColumnsList,
@@ -127,29 +126,28 @@ fun SummaryTable(
                     horizontalScroll = hScrollState,
                     onClick = onHeaderClick
                 )
-                if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
-                        tint = MaterialTheme.colorScheme.outlineVariant,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .alpha(0.8f)
-                            .offset(x = dimensionResource(id = R.dimen.small_padding))
-                    )
-            }
 
-            // Rows
-            SummaryTableData(
-                fixedColumns = fixedColumnsList,
-                scrollableColumns = scrollColumnsList,
-                data = data,
-                horizontalScroll = hScrollState,
-                onClick = onDataClick
-            )
+                // Rows
+                SummaryTableData(
+                    fixedColumns = fixedColumnsList,
+                    scrollableColumns = scrollColumnsList,
+                    data = data,
+                    horizontalScroll = hScrollState,
+                    onClick = onDataClick
+                )
+            }
+            if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
+                Icon(
+                    painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
+                    //tint = MaterialTheme.colorScheme.outlineVariant,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .alpha(0.8f)
+                        .offset(x = dimensionResource(id = R.dimen.small_padding))
+                )
         }
 
     }
-
 }
 
 @Composable
