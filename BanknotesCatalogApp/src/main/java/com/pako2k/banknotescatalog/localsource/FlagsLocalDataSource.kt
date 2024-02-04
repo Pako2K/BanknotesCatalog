@@ -17,30 +17,9 @@ class FlagsLocalDataSource (
 ){
     suspend fun getFlags() : Map<String,ImageBitmap> = coroutineScope{
         getFlagsSync()
-/*        val tmp = mutableMapOf<String,ImageBitmap>()
-        try {
-            val fileNames = assetManager.list(sourceAssetsDir) ?: arrayOf<String>()
-            for (fileName in fileNames){
-                try {
-                    val fileIS = assetManager.open(fileName)
-                    val bitmap = BitmapFactory.decodeStream(fileIS)
-                    if (bitmap != null)
-                        tmp[fileName.substringBeforeLast(".$flagsExt")] =  bitmap.asImageBitmap()
-                }
-                catch (exc : IOException){
-                }
-            }
-        }
-        catch (exc : IOException){
-        }
-
-        tmp
-        */
     }
 
-
     fun getFlagsSync() : Map<String,ImageBitmap> {
-
         val tmp = mutableMapOf<String,ImageBitmap>()
         try {
             val fileNames = assetManager.list(sourceAssetsDir) ?: arrayOf<String>()

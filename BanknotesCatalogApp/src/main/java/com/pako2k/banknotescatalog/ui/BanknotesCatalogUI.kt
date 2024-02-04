@@ -36,9 +36,10 @@ import com.pako2k.banknotescatalog.ui.parts.Header
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
-import com.pako2k.banknotescatalog.ui.views.Countries
-import com.pako2k.banknotescatalog.ui.views.Country
+import com.pako2k.banknotescatalog.ui.views.TerritoriesView
+import com.pako2k.banknotescatalog.ui.views.TerritoryView
 import com.pako2k.banknotescatalog.ui.views.Currencies
+import com.pako2k.banknotescatalog.ui.views.CurrencyView
 
 
 @Composable
@@ -123,11 +124,10 @@ fun MainScreen(
                 )
             }
             composable(MenuOption.COUNTRIES.name){
-                Countries(
+                TerritoriesView(
                     screenWidth = screenWidth,
-                    territoriesData = mainViewModel.territoriesData,
-                    sortBy = uiState.territoriesSortedBy,
-                    sortingDir = uiState.territoriesSortingDir,
+                    table = uiState.territoriesTable,
+                    data = mainViewModel.territoriesData,
                     onCountryClick = {
                         navController.navigate("COUNTRY/$it")
                                      },
@@ -136,15 +136,18 @@ fun MainScreen(
             }
             composable(MenuOption.CURRENCIES.name){
                 Currencies(
-                    //screenWidth = screenWidth,
-                    //currenciesData = listOf(),
-                    //sortBy = uiState.territoriesSortedBy,
-                    //sortingDir = uiState.territoriesSortingDir,
-                    //onCurrencyClick = {
-                    //},
-                    //onCountryClick = {
-                    //},
-                    //sortCallback = { }
+                    screenWidth = screenWidth,
+                    table = uiState.currenciesTable,
+                    currenciesData = mainViewModel.currenciesData,
+                    territoriesData = mainViewModel.territoriesData,
+                    territoriesIndexMap = mainViewModel.repository.territoriesIndexMap,
+                    onCurrencyClick = {
+                        navController.navigate("CURRENCY/$it")
+                    },
+                    onCountryClick = {
+                        navController.navigate("COUNTRY/$it")
+                    },
+                    sortCallback = { mainViewModel.sortCurrenciesBy(it) }
                 )
             }
             composable(MenuOption.DENOMINATIONS.name){
@@ -160,8 +163,15 @@ fun MainScreen(
                 Text ("SIGN IN / SIGN UP")
             }
             composable("COUNTRY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
-                Country(
-                    territory = mainViewModel.repository.territories.find { it.id == (navBackStackEntry.arguments?.getInt("id")?.toUInt() ?: 1u)} ?: mainViewModel.repository.territories[0]
+                val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                TerritoryView(
+                    territory = mainViewModel.repository.territories[mainViewModel.repository.territoriesIndexMap[id]!!]
+                )
+            }
+            composable("CURRENCY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
+                val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                CurrencyView(
+                    currency = mainViewModel.repository.currencies[mainViewModel.repository.currenciesIndexMap[id]!!]
                 )
             }
         }

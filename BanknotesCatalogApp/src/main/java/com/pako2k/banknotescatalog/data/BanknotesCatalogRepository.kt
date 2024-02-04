@@ -5,7 +5,28 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import com.pako2k.banknotescatalog.network.BanknotesNetworkDataSource
-import com.pako2k.banknotescatalog.ui.parts.Sorting
+
+
+enum class SortDirection {
+    ASC,
+    DESC
+}
+
+sealed class SortableField
+
+sealed class CurrencySortableField : SortableField()
+object CurrencyFieldName : CurrencySortableField()
+object CurrencyFieldOwnedBy : CurrencySortableField()
+object CurrencyFieldStart : CurrencySortableField()
+object CurrencyFieldEnd : CurrencySortableField()
+
+
+sealed class TerritorySortableField : SortableField()
+object TerritoryFieldName : TerritorySortableField()
+object TerritoryFieldStart : TerritorySortableField()
+object TerritoryFieldEnd : TerritorySortableField()
+
+
 
 
 class BanknotesCatalogRepository private constructor(
@@ -18,8 +39,31 @@ class BanknotesCatalogRepository private constructor(
         private set
     var territoryTypes : Map<UInt, TerritoryType> = mapOf()
         private set
-    var territories : List<Territory> = listOf()
+
+
+    // Value set when territories list change
+    var territoriesIndexMap : Map<UInt,Int> = mapOf()
         private set
+    var territories : List<Territory> = listOf()
+        private set(value){
+            field = value
+            var index = 0
+            territoriesIndexMap = field.associate { cur ->
+                cur.id to index++
+            }
+        }
+
+    // Value set when currencies list change
+    var currenciesIndexMap : Map<UInt,Int> = mapOf()
+        private set
+    var currencies : List<Currency> = listOf()
+        private set(value){
+            field = value
+            var index = 0
+            currenciesIndexMap = field.associate { cur ->
+                cur.id to index++
+            }
+        }
 
     companion object {
         private var _repository : BanknotesCatalogRepository? = null
@@ -50,29 +94,41 @@ class BanknotesCatalogRepository private constructor(
         territories = banknotesNetworkDataSource.getTerritories().filter { ter ->
             continents[ter.continentId]  != null
         }
+        var index = 0
+        territoriesIndexMap = territories.associate { ter ->
+            ter.id to index++
+        }
+    }
+    suspend fun fetchCurrencies() {
+        currencies = banknotesNetworkDataSource.getCurrencies()
     }
 
 
-    fun sortTerritories(sortBy : Territory.SortableCol , sortingDir : Sorting){
+    fun sortTerritories(sortBy : TerritorySortableField, sortingDir : SortDirection){
         // Sort data
         territories = when (sortBy){
-            Territory.SortableCol.NAME -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.name  } else territories.sortedBy { it.name  }
-            Territory.SortableCol.START -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.start } else territories.sortedBy { it.start }
-            Territory.SortableCol.END -> if (sortingDir == Sorting.DESC) territories.sortedByDescending { it.end } else territories.sortedBy { it.end }
+            TerritoryFieldName -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.name  } else territories.sortedBy { it.name  }
+            TerritoryFieldStart -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.start } else territories.sortedBy { it.start }
+            TerritoryFieldEnd -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.end } else territories.sortedBy { it.end }
         }
     }
 
-    fun getTerritoriesData() : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
-
-        for (ter in territories){
-            tmp.add(territoryToMap(ter))
+    fun sortCurrencies(sortBy : CurrencySortableField, sortingDir : SortDirection){
+        // Sort data
+        currencies = when (sortBy){
+            CurrencyFieldName ->
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.name } else currencies.sortedBy { it.name }
+            CurrencyFieldOwnedBy ->
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.ownedBy[0].id  } else currencies.sortedBy { it.ownedBy[0].id }
+            CurrencyFieldStart ->
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.startYear } else currencies.sortedBy { it.startYear }
+            CurrencyFieldEnd ->
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.endYear } else currencies.sortedBy { it.endYear }
         }
-
-        return tmp
     }
 
-    fun getTerritoriesDataByContinent (byContinent : UInt?) : List<Map<String, Any?>> {
+
+    fun getTerritoriesData (byContinent : UInt?) : List<Map<String, Any?>> {
         val tmp  = mutableListOf<Map<String, Any?>>()
 
         if (byContinent == null)
@@ -88,6 +144,7 @@ class BanknotesCatalogRepository private constructor(
         return tmp
     }
 
+    /*
     fun getTerritoriesDataByType (byTerritoryType: UInt?) : List<Map<String, Any?>> {
         val tmp  = mutableListOf<Map<String, Any?>>()
 
@@ -136,6 +193,25 @@ class BanknotesCatalogRepository private constructor(
         return tmp
     }
 
+     */
+
+    fun getCurrenciesData (byContinent : UInt?) : List<Map<String, Any?>> {
+        val tmp  = mutableListOf<Map<String, Any?>>()
+
+        if (byContinent == null)
+            for (cur in currencies){
+                tmp.add(currencyToMap(cur))
+            }
+        else
+            for (cur in currencies){
+                if (cur.continentId == byContinent)
+                    tmp.add(currencyToMap(cur))
+            }
+
+        return tmp
+    }
+
+
     private fun territoryToMap(territory : Territory) : Map<String, Any?>{
         return mapOf(
             "id" to territory.id,
@@ -148,4 +224,15 @@ class BanknotesCatalogRepository private constructor(
         )
     }
 
+    private fun currencyToMap(currency : Currency) : Map<String, Any?>{
+        return mapOf(
+            "id" to currency.id,
+            "iso3" to currency.iso3,
+            "name" to currency.name,
+            "fullName" to currency.fullName,
+            "ownedBy" to currency.ownedBy,
+            "start" to currency.start,
+            "end" to currency.end
+        )
+    }
 }

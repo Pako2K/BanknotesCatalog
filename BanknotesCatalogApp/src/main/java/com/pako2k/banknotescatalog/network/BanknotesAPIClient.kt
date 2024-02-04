@@ -2,6 +2,7 @@ package com.pako2k.banknotescatalog.network
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.pako2k.banknotescatalog.data.Continent
+import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryType
 import kotlinx.serialization.json.Json
@@ -21,12 +22,15 @@ interface BanknotesAPIService{
 
     @GET("territory")
     suspend fun getTerritories() : List<Territory>
+
+    @GET("currency")
+    suspend fun getCurrencies() : List<Currency>
 }
 
 
 class BanknotesAPIClient (
-    private val baseURL : String,
-    private var timeout : Int
+    baseURL : String,
+    timeout : Int
 ){
     private val retrofit = Retrofit
         .Builder()
@@ -49,4 +53,5 @@ class BanknotesAPIClient (
     suspend fun getContinents() = retrofitService.getContinents()
     suspend fun getTerritoryTypes()  = retrofitService.getTerritoryTypes()
     suspend fun getTerritories() = retrofitService.getTerritories()
+    suspend fun getCurrencies() = retrofitService.getCurrencies()
 }

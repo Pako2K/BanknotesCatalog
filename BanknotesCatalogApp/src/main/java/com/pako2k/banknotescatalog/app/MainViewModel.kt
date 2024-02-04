@@ -9,10 +9,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
-import com.pako2k.banknotescatalog.data.Territory
+import com.pako2k.banknotescatalog.data.CurrencySortableField
+import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
-import com.pako2k.banknotescatalog.ui.parts.Sorting
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -40,6 +41,10 @@ class MainViewModel private constructor(
 
     var territoriesData : List<Map<String,Any?>>
         private set
+    var currenciesData : List<Map<String,Any?>>
+        private set
+
+
 
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
@@ -65,6 +70,7 @@ class MainViewModel private constructor(
 
         repository = BanknotesCatalogRepository.create(ctx, apiClient)
         territoriesData = listOf()
+        currenciesData = listOf()
 
         // Initialize flags
         viewModelScope.launch {
@@ -72,7 +78,7 @@ class MainViewModel private constructor(
         }
 
         // Initialization in separate coroutines
-        val job = viewModelScope.async {
+        val job1 = viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getContinents")
 
             // Get Continents and territories
@@ -91,14 +97,14 @@ class MainViewModel private constructor(
 
             return@async result
         }
-        viewModelScope.launch {
+        val job2 = viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritories")
 
             // Get Territories
-            var result : ComponentState = try {
+            val result : ComponentState = try {
                 repository.fetchTerritories()
 
-                territoriesData = repository.getTerritoriesData()
+                territoriesData = repository.getTerritoriesData(null)
                 ComponentState.DONE
             }
             catch (exc : Exception){
@@ -106,15 +112,38 @@ class MainViewModel private constructor(
                 ComponentState.FAILED
             }
 
-            if (job.await() == ComponentState.FAILED) result = ComponentState.FAILED
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories")
+            return@async result
+        }
+
+        val job3 = viewModelScope.async {
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getCurrencies")
+
+            // Get Currencies
+            val result : ComponentState = try {
+                repository.fetchCurrencies()
+                currenciesData = repository.getCurrenciesData(null)
+                ComponentState.DONE
+            }
+            catch (exc : Exception){
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                ComponentState.FAILED
+            }
+
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies")
+            return@async result
+        }
+
+        viewModelScope.launch{
+            val results = awaitAll(job1, job2, job3)
+            val finalResult = if (results.contains(ComponentState.FAILED)) ComponentState.FAILED
+            else ComponentState.DONE
 
             _mainUiInitializationState.update {currentState ->
                 currentState.copy(
-                    state = result
+                    state = finalResult
                 )
             }
-
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories")
         }
 
         Log.d(ctx.getString(R.string.app_log_tag), "End INIT MainViewModel")
@@ -127,7 +156,8 @@ class MainViewModel private constructor(
             if (continentId == uiState.value.selectedContinent) null
             else continentId
 
-        territoriesData = repository.getTerritoriesDataByContinent(newSelection)
+        territoriesData = repository.getTerritoriesData(newSelection)
+        currenciesData = repository.getCurrenciesData(newSelection)
 
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -136,24 +166,35 @@ class MainViewModel private constructor(
         }
     }
 
-    fun sortTerritoriesBy(sortBy : Territory.SortableCol) {
-        val newSortingDir =
-            if (_mainUiState.value.territoriesSortedBy == sortBy)
-                if (_mainUiState.value.territoriesSortingDir == Sorting.ASC)
-                    Sorting.DESC
-                else
-                    Sorting.ASC
-            else
-                Sorting.ASC
+    fun sortTerritoriesBy(sortBy : TerritorySortableField) {
 
-        repository.sortTerritories(sortBy, newSortingDir)
+        _mainUiState.value.territoriesTable.sortBy( _mainUiState.value.territoriesTable.getCol(sortBy)?:2)
 
-        territoriesData = repository.getTerritoriesDataByContinent(_mainUiState.value.selectedContinent)
+        val sortedColumn = _mainUiState.value.territoriesTable.sortedBy
+        val newSortingDir = _mainUiState.value.territoriesTable.columns[sortedColumn].sortedDirection!!
+        repository.sortTerritories(sortBy, newSortingDir )
+
+        territoriesData = repository.getTerritoriesData(_mainUiState.value.selectedContinent)
 
         _mainUiState.update { currentState ->
             currentState.copy(
-                territoriesSortedBy = sortBy,
-                territoriesSortingDir = newSortingDir
+                summaryTableSortingFlag = !currentState.summaryTableSortingFlag
+            )
+        }
+    }
+
+    fun sortCurrenciesBy(sortBy : CurrencySortableField) {
+        _mainUiState.value.currenciesTable.sortBy(_mainUiState.value.currenciesTable.getCol(sortBy)?:1)
+        val sortedColumn = _mainUiState.value.currenciesTable.sortedBy
+        val newSortingDir = _mainUiState.value.currenciesTable.columns[sortedColumn].sortedDirection!!
+
+        repository.sortCurrencies(sortBy, newSortingDir)
+
+        currenciesData = repository.getCurrenciesData(_mainUiState.value.selectedContinent)
+
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                summaryTableSortingFlag = !currentState.summaryTableSortingFlag
             )
         }
     }
