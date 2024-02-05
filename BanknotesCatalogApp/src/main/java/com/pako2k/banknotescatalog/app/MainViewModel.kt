@@ -36,11 +36,14 @@ class MainViewModel private constructor(
     val initializationState = _mainUiInitializationState.asStateFlow()
 
     // Private set so it cannot be updated outside this MainViewModel
-    var repository : BanknotesCatalogRepository
-        private set
+    private val repository : BanknotesCatalogRepository
+
+    val continents
+        get() = repository.continents
 
     var territoriesData : List<Map<String,Any?>>
         private set
+
     var currenciesData : List<Map<String,Any?>>
         private set
 
@@ -72,10 +75,6 @@ class MainViewModel private constructor(
         territoriesData = listOf()
         currenciesData = listOf()
 
-        // Initialize flags
-        viewModelScope.launch {
-            repository.fetchFlags()
-        }
 
         // Initialization in separate coroutines
         val job1 = viewModelScope.async {
@@ -122,6 +121,7 @@ class MainViewModel private constructor(
             // Get Currencies
             val result : ComponentState = try {
                 repository.fetchCurrencies()
+
                 currenciesData = repository.getCurrenciesData(null)
                 ComponentState.DONE
             }

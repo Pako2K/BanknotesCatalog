@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.Dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.data.CurrencySortableField
-import com.pako2k.banknotescatalog.data.TerritoryLink
 import com.pako2k.banknotescatalog.ui.parts.SummaryTableUI
 
 
@@ -21,12 +20,10 @@ private const val MIN_FIXED_COLS = 2
 
 
 @Composable
-fun Currencies(
+fun CurrenciesView(
     screenWidth: Dp,
     table : SummaryTable,
     currenciesData : List<Map<String,Any?>>,
-    territoriesData : List<Map<String,Any?>>,
-    territoriesIndexMap : Map<UInt,Int>,
     sortCallback: (sortBy: CurrencySortableField)->Unit,
     onCurrencyClick: (currencyID: UInt)->Unit,
     onCountryClick: (territoryID: UInt)->Unit
@@ -38,15 +35,14 @@ fun Currencies(
     for(cur in currenciesData){
         val start = cur["start"].toString()
         val end = cur["end"]?.toString()?:""
-        val ownedById = ((cur["ownedBy"] as Array<*>)[0] as TerritoryLink).id
-        val ownedByTer = territoriesData[territoriesIndexMap[ownedById]!!]["name"].toString()
+        val ownedBy = cur["ownedBy"] as Pair<*,*>
         dataUI.add(
             listOf(
                 cur["iso3"] ?:"",
                 Pair(cur["id"], cur["name"].toString()),
-                Pair(ownedById, ownedByTer),
-                start.substring(0, minOf(4, start.length)),
-                end.substring(0, minOf(4, end.length)),
+                ownedBy,
+                start,
+                end
             )
         )
     }

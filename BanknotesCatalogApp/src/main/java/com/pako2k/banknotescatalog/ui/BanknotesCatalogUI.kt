@@ -37,9 +37,9 @@ import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
-import com.pako2k.banknotescatalog.ui.views.TerritoryView
-import com.pako2k.banknotescatalog.ui.views.Currencies
+import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
+import com.pako2k.banknotescatalog.ui.views.TerritoryView
 
 
 @Composable
@@ -94,7 +94,7 @@ fun MainScreen(
                 if (mainMenuOption != null) {
                     ContinentFilter(
                         windowWidth = windowSize.widthSizeClass,
-                        continents = mainViewModel.repository.continents.values.toList(),
+                        continents = mainViewModel.continents.values.toList(),
                         selectedContinentId = uiState.selectedContinent,
                         onclick = { mainViewModel.setContinentFilter(it) },
                     )
@@ -135,12 +135,10 @@ fun MainScreen(
                 )
             }
             composable(MenuOption.CURRENCIES.name){
-                Currencies(
+                CurrenciesView(
                     screenWidth = screenWidth,
                     table = uiState.currenciesTable,
                     currenciesData = mainViewModel.currenciesData,
-                    territoriesData = mainViewModel.territoriesData,
-                    territoriesIndexMap = mainViewModel.repository.territoriesIndexMap,
                     onCurrencyClick = {
                         navController.navigate("CURRENCY/$it")
                     },
@@ -164,15 +162,21 @@ fun MainScreen(
             }
             composable("COUNTRY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
                 val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                TerritoryView(
-                    territory = mainViewModel.repository.territories[mainViewModel.repository.territoriesIndexMap[id]!!]
-                )
+                val data = mainViewModel.territoriesData.find{ it["id"] == id }
+                if (data!= null)
+                    TerritoryView(
+                        windowWidth = windowSize.widthSizeClass,
+                        data = data,
+                        onCountryClick = {}
+                    )
             }
             composable("CURRENCY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
                 val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                CurrencyView(
-                    currency = mainViewModel.repository.currencies[mainViewModel.repository.currenciesIndexMap[id]!!]
-                )
+                val data = mainViewModel.currenciesData.find{ it["id"] == id }
+                if (data!= null)
+                    CurrencyView(
+                        currency = data,
+                    )
             }
         }
 

@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import com.pako2k.banknotescatalog.network.BanknotesNetworkDataSource
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 
 enum class SortDirection {
@@ -14,6 +16,7 @@ enum class SortDirection {
 
 sealed class SortableField
 
+// Enumeration of Currency fields which can be used for sorting. Implemented as child of SortableField!
 sealed class CurrencySortableField : SortableField()
 object CurrencyFieldName : CurrencySortableField()
 object CurrencyFieldOwnedBy : CurrencySortableField()
@@ -21,6 +24,7 @@ object CurrencyFieldStart : CurrencySortableField()
 object CurrencyFieldEnd : CurrencySortableField()
 
 
+// Enumeration of Territory fields which can be used for sorting. Implemented as child of SortableField!
 sealed class TerritorySortableField : SortableField()
 object TerritoryFieldName : TerritorySortableField()
 object TerritoryFieldStart : TerritorySortableField()
@@ -28,6 +32,21 @@ object TerritoryFieldEnd : TerritorySortableField()
 
 
 
+// SINGLETON REPOSITORY OF BANKNOTES CATALOG DATA
+//****************************************************
+// Public attributes:
+//    - continents => Map<contId, Continent>  (READ ONLY)
+//    - territoryTypes => Map<typeId, TerritoryType> (READ ONLY)
+//    - territories => List<Territory> (variable sorted List) (READ ONLY)
+//    - currencies => List<Currency> (variable sorted List) (READ ONLY)
+//
+// Public methods:
+//      - BanknotesCatalogRepository.create()
+//      - fetch...() => get data from DataSource and store it
+//      - sortTerritories(TerritorySortableField, SortDirection) => sort territories
+//      - sortCurrencies(CurrencySortableField, SortDirection) => sort currencies
+//      - getTerritoriesData(contId) : List<Map<String, Any?>> => return list of filtered territories as a Map(fieldName, fieldValue)
+//      - getCurrenciesData(contId) : List<Map<String, Any?>> => return list of filtered territories as a Map(fieldName, fieldValue)
 
 class BanknotesCatalogRepository private constructor(
     private val flagsLocalDataSource: FlagsLocalDataSource,
@@ -37,33 +56,15 @@ class BanknotesCatalogRepository private constructor(
 
     var continents : Map<UInt, Continent> = mapOf()
         private set
+
     var territoryTypes : Map<UInt, TerritoryType> = mapOf()
         private set
 
-
     // Value set when territories list change
-    var territoriesIndexMap : Map<UInt,Int> = mapOf()
-        private set
-    var territories : List<Territory> = listOf()
-        private set(value){
-            field = value
-            var index = 0
-            territoriesIndexMap = field.associate { cur ->
-                cur.id to index++
-            }
-        }
+    private var territories : List<Territory> = listOf()
 
     // Value set when currencies list change
-    var currenciesIndexMap : Map<UInt,Int> = mapOf()
-        private set
-    var currencies : List<Currency> = listOf()
-        private set(value){
-            field = value
-            var index = 0
-            currenciesIndexMap = field.associate { cur ->
-                cur.id to index++
-            }
-        }
+    private var currencies : List<Currency> = listOf()
 
     companion object {
         private var _repository : BanknotesCatalogRepository? = null
@@ -77,10 +78,6 @@ class BanknotesCatalogRepository private constructor(
     }
 
 
-    suspend fun fetchFlags() {
-        flags = flagsLocalDataSource.getFlags()
-    }
-
     suspend fun fetchContinents() {
         continents = banknotesNetworkDataSource.getContinents().associateBy { cont -> cont.id }
     }
@@ -91,21 +88,18 @@ class BanknotesCatalogRepository private constructor(
 
     // Use after TerritoryTypes and Continents are fetched
     suspend fun fetchTerritories() {
+        coroutineScope { launch{fetchFlags()} }
         territories = banknotesNetworkDataSource.getTerritories().filter { ter ->
-            continents[ter.continentId]  != null
-        }
-        var index = 0
-        territoriesIndexMap = territories.associate { ter ->
-            ter.id to index++
+            continents[ter.continent.id]  != null
         }
     }
+
     suspend fun fetchCurrencies() {
         currencies = banknotesNetworkDataSource.getCurrencies()
     }
 
 
     fun sortTerritories(sortBy : TerritorySortableField, sortingDir : SortDirection){
-        // Sort data
         territories = when (sortBy){
             TerritoryFieldName -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.name  } else territories.sortedBy { it.name  }
             TerritoryFieldStart -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.start } else territories.sortedBy { it.start }
@@ -114,19 +108,21 @@ class BanknotesCatalogRepository private constructor(
     }
 
     fun sortCurrencies(sortBy : CurrencySortableField, sortingDir : SortDirection){
-        // Sort data
         currencies = when (sortBy){
             CurrencyFieldName ->
-                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.name } else currencies.sortedBy { it.name }
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.name }
+                else currencies.sortedBy { it.name }
             CurrencyFieldOwnedBy ->
-                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.ownedBy[0].id  } else currencies.sortedBy { it.ownedBy[0].id }
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { (it.ownedBy.maxBy { it2 -> it2.start }).territory.name }
+                else currencies.sortedBy { (it.ownedBy.maxBy { it2 -> it2.start }).territory.name }
             CurrencyFieldStart ->
-                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.startYear } else currencies.sortedBy { it.startYear }
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.startYear }
+                else currencies.sortedBy { it.startYear }
             CurrencyFieldEnd ->
-                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.endYear } else currencies.sortedBy { it.endYear }
+                if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.endYear }
+                else currencies.sortedBy { it.endYear }
         }
     }
-
 
     fun getTerritoriesData (byContinent : UInt?) : List<Map<String, Any?>> {
         val tmp  = mutableListOf<Map<String, Any?>>()
@@ -137,12 +133,13 @@ class BanknotesCatalogRepository private constructor(
             }
         else
             for (ter in territories){
-                if (ter.continentId == byContinent)
+                if (ter.continent.id == byContinent)
                     tmp.add(territoryToMap(ter))
             }
 
         return tmp
     }
+
 
     /*
     fun getTerritoriesDataByType (byTerritoryType: UInt?) : List<Map<String, Any?>> {
@@ -195,8 +192,8 @@ class BanknotesCatalogRepository private constructor(
 
      */
 
-    fun getCurrenciesData (byContinent : UInt?) : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
+    fun getCurrenciesData (byContinent : UInt?) : List<MutableMap<String, Any?>> {
+        val tmp  = mutableListOf<MutableMap<String, Any?>>()
 
         if (byContinent == null)
             for (cur in currencies){
@@ -204,13 +201,16 @@ class BanknotesCatalogRepository private constructor(
             }
         else
             for (cur in currencies){
-                if (cur.continentId == byContinent)
+                if (cur.continent.id == byContinent)
                     tmp.add(currencyToMap(cur))
             }
 
         return tmp
     }
 
+    private suspend fun fetchFlags() {
+        flags = flagsLocalDataSource.getFlags()
+    }
 
     private fun territoryToMap(territory : Territory) : Map<String, Any?>{
         return mapOf(
@@ -218,21 +218,22 @@ class BanknotesCatalogRepository private constructor(
             "iso3" to territory.iso3,
             "flag" to flags[territory.flagName],
             "name" to territory.name,
-            "type" to territoryTypes[territory.territoryTypeId]!!.abbreviation,
+            "type" to (territoryTypes[territory.territoryType.id]?.abbreviation?:""),
             "start" to territory.start,
             "end" to territory.end
         )
     }
 
-    private fun currencyToMap(currency : Currency) : Map<String, Any?>{
-        return mapOf(
+    private fun currencyToMap(currency : Currency) : MutableMap<String, Any?>{
+        val ownedBy = currency.ownedBy.maxBy { it.start }
+        return mutableMapOf(
             "id" to currency.id,
             "iso3" to currency.iso3,
             "name" to currency.name,
             "fullName" to currency.fullName,
-            "ownedBy" to currency.ownedBy,
-            "start" to currency.start,
-            "end" to currency.end
+            "ownedBy" to Pair(ownedBy.territory.id, ownedBy.territory.name),
+            "start" to currency.startYear,
+            "end" to currency.endYear
         )
     }
 }

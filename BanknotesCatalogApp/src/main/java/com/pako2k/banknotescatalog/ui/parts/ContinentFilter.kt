@@ -37,17 +37,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.Continent
+import com.pako2k.banknotescatalog.data.ContinentIconMap
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
-
-
-val ContinentIconMap : Map<String,Int> = mapOf(
-    "Africa" to R.drawable.africa,
-    "North America" to R.drawable.northamerica,
-    "South America" to R.drawable.southamerica,
-    "Asia" to R.drawable.asia,
-    "Europe" to R.drawable.europe,
-    "Oceania" to R.drawable.oceania
-)
 
 @Composable
 fun ContinentFilter (
