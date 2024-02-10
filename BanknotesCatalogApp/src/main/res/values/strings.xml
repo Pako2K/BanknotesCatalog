@@ -21,4 +21,9 @@
 
     <string name="content_description_flag">"Flag</string>
 
+    <string name="ter_menu_currencies">Currencies</string>
+    <string name="ter_menu_banknotes">Banknotes</string>
+    <string name="ter_menu_stats">Stats</string>
+    <string name="ter_menu_info">Info</string>
+
 </resources>

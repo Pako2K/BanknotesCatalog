@@ -23,29 +23,12 @@ private const val MIN_FIXED_COLS = 2
 fun CurrenciesView(
     screenWidth: Dp,
     table : SummaryTable,
-    currenciesData : List<Map<String,Any?>>,
+    data : List<List<Any?>>,
     sortCallback: (sortBy: CurrencySortableField)->Unit,
     onCurrencyClick: (currencyID: UInt)->Unit,
     onCountryClick: (territoryID: UInt)->Unit
 ) {
     Log.d(stringResource(id = R.string.app_log_tag), "Start Currencies")
-
-    // Retrieve and set data to be shown
-    val dataUI : MutableList<List<Any?>> = mutableListOf()
-    for(cur in currenciesData){
-        val start = cur["start"].toString()
-        val end = cur["end"]?.toString()?:""
-        val ownedBy = cur["ownedBy"] as Pair<*,*>
-        dataUI.add(
-            listOf(
-                cur["iso3"] ?:"",
-                Pair(cur["id"], cur["name"].toString()),
-                ownedBy,
-                start,
-                end
-            )
-        )
-    }
 
     val totalWidth = (table.columns.sumOf { it.width.value.toDouble() }).toFloat()
     val padding = dimensionResource(id = R.dimen.small_padding)
@@ -54,7 +37,7 @@ fun CurrenciesView(
         SummaryTableUI(
             table = table,
             fixedColumns = fixedColumns,
-            data = dataUI,
+            data = data,
             onHeaderClick = {
                 sortCallback(table.columns[it].linkedField as CurrencySortableField)
             },

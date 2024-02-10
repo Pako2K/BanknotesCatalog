@@ -35,6 +35,7 @@ object TerritoryFieldEnd : TerritorySortableField()
 // SINGLETON REPOSITORY OF BANKNOTES CATALOG DATA
 //****************************************************
 // Public attributes:
+//    - flags => Map<String,ImageBitmap>  (READ ONLY)
 //    - continents => Map<contId, Continent>  (READ ONLY)
 //    - territoryTypes => Map<typeId, TerritoryType> (READ ONLY)
 //    - territories => List<Territory> (variable sorted List) (READ ONLY)
@@ -45,14 +46,15 @@ object TerritoryFieldEnd : TerritorySortableField()
 //      - fetch...() => get data from DataSource and store it
 //      - sortTerritories(TerritorySortableField, SortDirection) => sort territories
 //      - sortCurrencies(CurrencySortableField, SortDirection) => sort currencies
-//      - getTerritoriesData(contId) : List<Map<String, Any?>> => return list of filtered territories as a Map(fieldName, fieldValue)
+//      - getTerritories(contId) : List<Territory> => return list of filtered territories
 //      - getCurrenciesData(contId) : List<Map<String, Any?>> => return list of filtered territories as a Map(fieldName, fieldValue)
 
 class BanknotesCatalogRepository private constructor(
     private val flagsLocalDataSource: FlagsLocalDataSource,
     private val banknotesNetworkDataSource: BanknotesNetworkDataSource
 ){
-    private var flags : Map<String,ImageBitmap> = mapOf()
+    var flags : Map<String,ImageBitmap> = mapOf()
+        private set
 
     var continents : Map<UInt, Continent> = mapOf()
         private set
@@ -61,10 +63,12 @@ class BanknotesCatalogRepository private constructor(
         private set
 
     // Value set when territories list change
-    private var territories : List<Territory> = listOf()
+    var territories : List<Territory> = listOf()
+        private set
 
     // Value set when currencies list change
-    private var currencies : List<Currency> = listOf()
+     var currencies : List<Currency> = listOf()
+        private set
 
     companion object {
         private var _repository : BanknotesCatalogRepository? = null
@@ -124,22 +128,14 @@ class BanknotesCatalogRepository private constructor(
         }
     }
 
-    fun getTerritoriesData (byContinent : UInt?) : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
 
-        if (byContinent == null)
-            for (ter in territories){
-                tmp.add(territoryToMap(ter))
-            }
-        else
-            for (ter in territories){
-                if (ter.continent.id == byContinent)
-                    tmp.add(territoryToMap(ter))
-            }
-
-        return tmp
+    fun getTerritories (byContinent : UInt) : List<Territory> {
+        return territories.filter { it.continent.id == byContinent }
     }
 
+    fun getCurrencies (byContinent : UInt) : List<Currency> {
+        return currencies.filter { it.continent.id == byContinent }
+    }
 
     /*
     fun getTerritoriesDataByType (byTerritoryType: UInt?) : List<Map<String, Any?>> {
@@ -192,48 +188,8 @@ class BanknotesCatalogRepository private constructor(
 
      */
 
-    fun getCurrenciesData (byContinent : UInt?) : List<MutableMap<String, Any?>> {
-        val tmp  = mutableListOf<MutableMap<String, Any?>>()
-
-        if (byContinent == null)
-            for (cur in currencies){
-                tmp.add(currencyToMap(cur))
-            }
-        else
-            for (cur in currencies){
-                if (cur.continent.id == byContinent)
-                    tmp.add(currencyToMap(cur))
-            }
-
-        return tmp
-    }
 
     private suspend fun fetchFlags() {
         flags = flagsLocalDataSource.getFlags()
-    }
-
-    private fun territoryToMap(territory : Territory) : Map<String, Any?>{
-        return mapOf(
-            "id" to territory.id,
-            "iso3" to territory.iso3,
-            "flag" to flags[territory.flagName],
-            "name" to territory.name,
-            "type" to (territoryTypes[territory.territoryType.id]?.abbreviation?:""),
-            "start" to territory.start,
-            "end" to territory.end
-        )
-    }
-
-    private fun currencyToMap(currency : Currency) : MutableMap<String, Any?>{
-        val ownedBy = currency.ownedBy.maxBy { it.start }
-        return mutableMapOf(
-            "id" to currency.id,
-            "iso3" to currency.iso3,
-            "name" to currency.name,
-            "fullName" to currency.fullName,
-            "ownedBy" to Pair(ownedBy.territory.id, ownedBy.territory.name),
-            "start" to currency.startYear,
-            "end" to currency.endYear
-        )
     }
 }

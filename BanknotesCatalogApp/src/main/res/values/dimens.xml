@@ -26,5 +26,7 @@
     <dimen name="narrow_col_size">50dp</dimen>
 
 
-    <dimen name="territory_flag_size">60dp</dimen>
+    <dimen name="territory_flag_height">32dp</dimen>
+    <dimen name="territory_continent_icon_height">36dp</dimen>
+    <dimen name="territory_continent_text_width">40dp</dimen>
 </resources>

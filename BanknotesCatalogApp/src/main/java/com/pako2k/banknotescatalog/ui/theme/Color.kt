@@ -73,3 +73,8 @@ val color_table_row_even = Color(0xFFF7FBFB)
 
 val color_table_link_prim = Color(0xFF00391C)
 val color_table_link_sec = Color(0xFF00696A)
+
+val background_color_territory_badge = Color(0xFFF7F8F8)
+val color_territory_badge = Color(0xFF00696A)
+
+val color_is_favourite = Color(0xFF891015)

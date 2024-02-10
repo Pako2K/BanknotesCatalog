@@ -30,26 +30,11 @@ private const val MIN_FIXED_COLS = 2
 fun TerritoriesView(
     screenWidth: Dp,
     table : SummaryTable,
-    data : List<Map<String,Any?>>,
+    data : List<List<Any?>>,
     sortCallback: (sortBy: TerritorySortableField)->Unit,
     onCountryClick: (territoryID: UInt)->Unit,
 ) {
     Log.d(stringResource(id = R.string.app_log_tag),"Start Countries")
-
-    val uiData : MutableList<List<Any?>> = mutableListOf()
-
-    for(ter in data){
-        val terTypSuffix =  if (ter["type"] == "Ind") "" else " [${ter["type"]}]"
-        uiData.add(
-            listOf(
-                ter["flag"],
-                ter["iso3"] ?:"",
-                Pair(ter["id"], ter["name"].toString() + terTypSuffix),
-                ter["start"].toString(),
-                ter["end"]?.toString()?:""
-            )
-        )
-    }
 
     val totalWidth = (table.columns.sumOf { it.width.value.toDouble() }).toFloat()
     val padding = dimensionResource(id = R.dimen.small_padding)
@@ -58,7 +43,7 @@ fun TerritoriesView(
         SummaryTableUI(
             table = table,
             fixedColumns = fixedColumns,
-            data = uiData,
+            data = data,
             onHeaderClick = {
                 sortCallback(table.columns[it].linkedField as TerritorySortableField)
                             },
@@ -85,11 +70,12 @@ private val summaryTablePreview = SummaryTable(
     sortDirection = SortDirection.ASC
 )
 
-private val dataPreview = listOf<Map<String,Any?>>(
-    mapOf("id" to 289u, "iso3" to null, "flag" to null, "name" to "Namibia", "type" to "NR", "start" to 1976, "end" to null),
-    mapOf("id" to 1u, "iso3" to "ARG", "flag" to null, "name" to "Argentina", "type" to "Ind", "start" to 1926, "end" to 1967),
-    mapOf("id" to 11u, "iso3" to "LAO", "flag" to null, "name" to "Laos", "type" to "Ind", "start" to 926, "end" to null)
+private val dataPreview = listOf(
+    listOf(null, null, Pair(8u, "Namibia [NR]"), "1976", ""),
+    listOf(null, "ARG",Pair(1u, "Argentina"), "1926", "1967"),
+    listOf(null, "LAO",Pair(2u, "Laos"), "926", "")
 )
+
 
 @Preview(widthDp = TEST_WIDTH)
 @Composable

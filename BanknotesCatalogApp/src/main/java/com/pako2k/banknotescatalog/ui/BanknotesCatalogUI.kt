@@ -127,7 +127,7 @@ fun MainScreen(
                 TerritoriesView(
                     screenWidth = screenWidth,
                     table = uiState.territoriesTable,
-                    data = mainViewModel.territoriesData,
+                    data = mainViewModel.territoriesViewData(),
                     onCountryClick = {
                         navController.navigate("COUNTRY/$it")
                                      },
@@ -138,7 +138,7 @@ fun MainScreen(
                 CurrenciesView(
                     screenWidth = screenWidth,
                     table = uiState.currenciesTable,
-                    currenciesData = mainViewModel.currenciesData,
+                    data = mainViewModel.currenciesViewData(),
                     onCurrencyClick = {
                         navController.navigate("CURRENCY/$it")
                     },
@@ -162,17 +162,19 @@ fun MainScreen(
             }
             composable("COUNTRY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
                 val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                val data = mainViewModel.territoriesData.find{ it["id"] == id }
+                val data = mainViewModel.territoryViewData(id)
                 if (data!= null)
                     TerritoryView(
                         windowWidth = windowSize.widthSizeClass,
                         data = data,
-                        onCountryClick = {}
+                        onCountryClick = {
+                            navController.navigate("COUNTRY/$it")
+                        }
                     )
             }
             composable("CURRENCY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
                 val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                val data = mainViewModel.currenciesData.find{ it["id"] == id }
+                val data = mainViewModel.currencyViewData(id)
                 if (data!= null)
                     CurrencyView(
                         currency = data,

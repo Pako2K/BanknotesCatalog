@@ -9,8 +9,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
+import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
+import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
+import com.pako2k.banknotescatalog.data.TerritoryTypes
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -41,13 +44,57 @@ class MainViewModel private constructor(
     val continents
         get() = repository.continents
 
-    var territoriesData : List<Map<String,Any?>>
-        private set
+    private var territoriesViewData : List<Territory>
 
-    var currenciesData : List<Map<String,Any?>>
-        private set
+    // returns field values for the Summary Table
+    fun territoriesViewData() : List<List<Any?>> {
+        val uiData : MutableList<List<Any?>> = mutableListOf()
 
+        for(ter in territoriesViewData){
+            val terTypSuffix =
+                if( ter.territoryType.name == TerritoryTypes.IND.value) ""
+                else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
+            uiData.add(
+                listOf(
+                    repository.flags[ter.flagName],
+                    ter.iso3?:"",
+                    Pair(ter.id, ter.name + terTypSuffix),
+                    ter.start.toString(),
+                    ter.end?.toString()?:""
+                )
+            )
+        }
 
+        return uiData
+    }
+
+    fun territoryViewData(terId : UInt) : Territory? {
+        val ter = (repository.territories.find{ it.id == terId })
+        ter?.extend(territoriesList = repository.territories, flags = repository.flags)
+        return ter
+    }
+
+    private var currenciesViewData : List<Currency>
+    fun currenciesViewData() : List<List<Any?>> {
+        val uiData : MutableList<List<Any?>> = mutableListOf()
+
+        for(cur in currenciesViewData){
+            val ownedBy = cur.ownedBy.maxBy { it.start }
+            uiData.add(
+                listOf(
+                    cur.iso3 ?: "",
+                    Pair(cur.id, cur.name),
+                    Pair(ownedBy.territory.id, ownedBy.territory.name),
+                    cur.startYear.toString(),
+                    cur.endYear?.toString() ?: ""
+                )
+            )
+        }
+        return uiData
+    }
+    fun currencyViewData(curId : UInt) : Currency? {
+        return repository.currencies.find{ it.id == curId }
+    }
 
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
@@ -72,8 +119,8 @@ class MainViewModel private constructor(
         val apiClient = BanknotesAPIClient(url, timeout)
 
         repository = BanknotesCatalogRepository.create(ctx, apiClient)
-        territoriesData = listOf()
-        currenciesData = listOf()
+        territoriesViewData = listOf()
+        currenciesViewData = listOf()
 
 
         // Initialization in separate coroutines
@@ -103,7 +150,7 @@ class MainViewModel private constructor(
             val result : ComponentState = try {
                 repository.fetchTerritories()
 
-                territoriesData = repository.getTerritoriesData(null)
+                territoriesViewData = repository.territories
                 ComponentState.DONE
             }
             catch (exc : Exception){
@@ -111,7 +158,7 @@ class MainViewModel private constructor(
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with ${result.toString()}")
             return@async result
         }
 
@@ -122,15 +169,15 @@ class MainViewModel private constructor(
             val result : ComponentState = try {
                 repository.fetchCurrencies()
 
-                currenciesData = repository.getCurrenciesData(null)
+                currenciesViewData = repository.currencies
                 ComponentState.DONE
             }
             catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                Log.e(ctx.getString(R.string.app_log_tag), exc.message + exc.stackTrace.toString())
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies with ${result.toString()}")
             return@async result
         }
 
@@ -156,12 +203,18 @@ class MainViewModel private constructor(
             if (continentId == uiState.value.selectedContinent) null
             else continentId
 
-        territoriesData = repository.getTerritoriesData(newSelection)
-        currenciesData = repository.getCurrenciesData(newSelection)
+        if (newSelection != null) {
+            territoriesViewData = repository.getTerritories(newSelection)
+            currenciesViewData = repository.getCurrencies(newSelection)
+        }
+        else{
+            territoriesViewData = repository.territories
+            currenciesViewData = repository.currencies
+        }
 
         _mainUiState.update { currentState ->
             currentState.copy(
-                selectedContinent = newSelection,
+                selectedContinent = newSelection
             )
         }
     }
@@ -174,7 +227,8 @@ class MainViewModel private constructor(
         val newSortingDir = _mainUiState.value.territoriesTable.columns[sortedColumn].sortedDirection!!
         repository.sortTerritories(sortBy, newSortingDir )
 
-        territoriesData = repository.getTerritoriesData(_mainUiState.value.selectedContinent)
+
+        territoriesViewData = _mainUiState.value.selectedContinent?.let {repository.getTerritories(it)}?:repository.territories
 
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -190,7 +244,7 @@ class MainViewModel private constructor(
 
         repository.sortCurrencies(sortBy, newSortingDir)
 
-        currenciesData = repository.getCurrenciesData(_mainUiState.value.selectedContinent)
+        currenciesViewData = _mainUiState.value.selectedContinent?.let {repository.getCurrencies(it)}?:repository.currencies
 
         _mainUiState.update { currentState ->
             currentState.copy(

@@ -1,5 +1,6 @@
 package com.pako2k.banknotescatalog.data
 
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,6 +32,54 @@ data class Territory (
     val uri: String
 ) {
     val flagName : String = iso3?.lowercase()?:name.lowercase().replace(",", "").replace(" ", "")
+
+    private var isExtended = false
+
+    var flag : ImageBitmap? = null
+        private set
+    var parentExt : Territory? = null
+        private set
+    var successorsExt : List<Territory> = listOf()
+        private set
+
+    var predecessorsExt : List<Territory> = listOf()
+        private set
+
+    // Extend with additional data this territory ane the related ones
+    fun extend(
+       territoriesList: List<Territory>,
+       flags: Map<String,ImageBitmap>
+    ) {
+        if (isExtended) return
+
+        flag = flags[this.flagName]
+        if (this.parentId != null){
+            parentExt = territoriesList.find { it.id == this.parentId }
+            if (parentExt != null) parentExt!!.flag = flags[parentExt!!.flagName]
+        }
+
+        val predecessorsMutableList = mutableListOf<Territory>()
+        val successorsMutableList = mutableListOf<Territory>()
+        territoriesList.forEach{
+            if (it.successors?.find { it2 -> this.id == it2.id } != null) {
+                predecessorsMutableList.add(it)
+                it.flag = flags[it.flagName]
+            }
+
+            if (this.successors?.find{ it3 -> it.id == it3.id} != null  ){
+                successorsMutableList.add(it)
+                it.flag = flags[it.flagName]
+            }
+        }
+
+        successorsExt = successorsMutableList
+        predecessorsExt = predecessorsMutableList
+
+        isExtended = true
+
+        return
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -54,6 +103,11 @@ data class Territory (
         if (description != other.description) return false
         if (uri != other.uri) return false
         if (flagName != other.flagName) return false
+        if (isExtended != other.isExtended) return false
+        if (flag != other.flag) return false
+        if (parentExt != other.parentExt) return false
+        if (successorsExt != other.successorsExt) return false
+        if (predecessorsExt != other.predecessorsExt) return false
 
         return true
     }
@@ -73,7 +127,11 @@ data class Territory (
         result = 31 * result + (description?.hashCode() ?: 0)
         result = 31 * result + uri.hashCode()
         result = 31 * result + flagName.hashCode()
+        result = 31 * result + isExtended.hashCode()
+        result = 31 * result + (flag?.hashCode() ?: 0)
+        result = 31 * result + (parentExt?.hashCode() ?: 0)
+        result = 31 * result + successorsExt.hashCode()
+        result = 31 * result + predecessorsExt.hashCode()
         return result
     }
-
 }
