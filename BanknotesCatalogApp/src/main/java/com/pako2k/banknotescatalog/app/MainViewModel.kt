@@ -197,6 +197,17 @@ class MainViewModel private constructor(
     }
 
 
+    fun updateFavouriteTer(id : UInt){
+        // Add or remove id
+        val newList = uiState.value.favouriteTerritories.toMutableList()
+
+        if (!newList.remove(id)) newList.add(id)
+        _mainUiState.update {currentState ->
+            currentState.copy(
+                favouriteTerritories = newList
+            )
+        }
+    }
 
     fun setContinentFilter(continentId : UInt) {
         val newSelection =

@@ -2,8 +2,15 @@ package com.pako2k.banknotescatalog.ui.views
 
 import android.util.Log
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -21,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -79,34 +87,107 @@ enum class TerMenuOption (@StringRes val textId : Int){
 fun TerritoryView(
     windowWidth: WindowWidthSizeClass,
     data : Territory,
+    isFavourite: Boolean,
     onCountryClick: (territoryID: UInt)->Unit,
+    onAddFavourite: (Boolean) -> Unit
     ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start Country")
 
     val selectedOption = rememberSaveable { mutableIntStateOf(TerMenuOption.CURRENCIES.textId) }
 
+    val enterAnimation = slideInVertically() + expandVertically(expandFrom = Alignment.Top) + fadeIn(initialAlpha = 0.3f)
+    val exitAnimation = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
+
     Surface {
         Column {
-            TerritoryHeader(windowWidth, data, false , {})
+            Box {
+                TerritoryHeader(windowWidth, data)
+
+                // Favourite button
+                Box(
+                    contentAlignment = Alignment.TopEnd,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(dimensionResource(id = R.dimen.xs_padding))
+                ) {
+                    FavouriteIon(
+                        size = dimensionResource(id = R.dimen.favourite_icon_size),
+                        isFavourite = isFavourite,
+                        onAddFavourite = onAddFavourite
+                    )
+                }
+            }
             Menu(selectedOption.intValue) { selectedOption.intValue = it.textId }
-            when (selectedOption.intValue){
-                TerMenuOption.CURRENCIES.textId -> {}
-                TerMenuOption.BANKNOTES.textId -> {}
-                TerMenuOption.STATS.textId -> {}
-                TerMenuOption.INFO.textId -> TerritoryInfo(data) {
+            // when (selectedOption.intValue){
+            //     TerMenuOption.CURRENCIES.textId -> {}
+            //     TerMenuOption.BANKNOTES.textId -> {}
+            //     TerMenuOption.STATS.textId -> {}
+            //     TerMenuOption.INFO.textId -> {
+            AnimatedVisibility(
+                visible = selectedOption.intValue == TerMenuOption.INFO.textId,
+                enter = enterAnimation,
+                exit = exitAnimation
+            ) {
+                TerritoryInfo(data) {
                     onCountryClick(it)
                 }
+            }
+            AnimatedVisibility(
+                visible = selectedOption.intValue == TerMenuOption.CURRENCIES.textId,
+                enter = enterAnimation,
+                exit = exitAnimation
+            ) {
+                Text("Currencies")
+            }
+            AnimatedVisibility(
+                visible = selectedOption.intValue == TerMenuOption.BANKNOTES.textId,
+                enter = enterAnimation,
+                exit = exitAnimation
+            ) {
+                Text("Banknotes")
+            }
+            AnimatedVisibility(
+                visible = selectedOption.intValue == TerMenuOption.STATS.textId,
+                enter = enterAnimation,
+                exit = exitAnimation
+            ) {
+                Text("Stats")
             }
         }
     }
 }
 
 @Composable
-fun TerritoryHeader(
-    windowWidth: WindowWidthSizeClass,
-    data : Territory,
+fun FavouriteIon(
+    size : Dp,
     isFavourite : Boolean,
     onAddFavourite : (Boolean) -> Unit
+){
+    IconButton(
+        onClick = { onAddFavourite(!isFavourite) }
+    ) {
+        // Add outline
+        if (isFavourite)
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(size+5.dp)
+            )
+
+        Icon(
+            Icons.Outlined.Star,
+            contentDescription = "Favourite Icon",
+            tint = if (isFavourite) color_is_favourite else MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(size)
+        )
+    }
+}
+
+@Composable
+fun TerritoryHeader(
+    windowWidth: WindowWidthSizeClass,
+    data : Territory
 ){
     Surface(
         modifier = Modifier.height(IntrinsicSize.Min)
@@ -118,26 +199,6 @@ fun TerritoryHeader(
             contentDescription = "",
             modifier = Modifier.fillMaxSize()
         )
-
-        // Favourite button
-        Row (
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(dimensionResource(id = R.dimen.xs_padding))
-        ) {
-            IconButton(
-                onClick = { onAddFavourite(!isFavourite) }
-            ) {
-                Icon(
-                    Icons.Outlined.Star,
-                    contentDescription = "Favourite Icon",
-                    tint = if (isFavourite) color_is_favourite else MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-
 
         // CONTINENT, FLAG AND NAMES
         Row(
@@ -318,15 +379,28 @@ fun TerritoryInfo(
                         .padding(dimensionResource(id = R.dimen.small_padding))
                         .fillMaxWidth()
                 ) {
-                    Text(
-                        text = data.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        textAlign = TextAlign.Justify,
-                        modifier = Modifier
-                            .padding(vertical = dimensionResource(id = R.dimen.medium_padding))
-                            .padding(horizontal = dimensionResource(id = R.dimen.large_padding))
-                    )
+                    Row {
+                        val textStyle = MaterialTheme.typography.bodySmall
+                        val textColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        Text(
+                            text = "History: ",
+                            style = textStyle,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor,
+                            modifier = Modifier
+                                .padding(top = dimensionResource(id = R.dimen.medium_padding))
+                                .padding(start = dimensionResource(id = R.dimen.large_padding))
+                        )
+                        Text(
+                            text = data.description,
+                            style = textStyle,
+                            color = textColor,
+                            textAlign = TextAlign.Justify,
+                            modifier = Modifier
+                                .padding(vertical = dimensionResource(id = R.dimen.medium_padding))
+                                .padding(end = dimensionResource(id = R.dimen.large_padding))
+                        )
+                    }
                 }
 
             Spacer(modifier = Modifier.size(dimensionResource(id = R.dimen.medium_padding)))
@@ -487,7 +561,9 @@ fun TerritoryViewPreview() {
         TerritoryView(
             windowWidth = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,TEST_HEIGHT.dp)).widthSizeClass,
             data = testData,
-            onCountryClick = { _ -> }
+            isFavourite = true,
+            onCountryClick = { _ -> },
+            onAddFavourite = {}
         )
     }
 }

@@ -65,7 +65,8 @@ fun TerritoryBadge(
                 contentScale = ContentScale.FillHeight,
                 modifier = Modifier
                     .height(flagHeight)
-                    .clip(RoundedCornerShape(80))
+                    .widthIn(max=flagHeight * 1.4f)
+                    .clip(RoundedCornerShape(40))
             )
         else
             Image(

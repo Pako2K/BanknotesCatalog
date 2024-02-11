@@ -48,19 +48,19 @@ val myTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily = Girassol,
         fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
+        fontSize = 18.sp,
         shadow = displayShadow
     ),
     headlineMedium = TextStyle(
         fontFamily = Girassol,
         fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
+        fontSize = 16.sp,
         shadow = displayShadow
     ),
     headlineSmall = TextStyle(
         fontFamily = Girassol,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
+        fontSize = 14.sp,
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.Serif,

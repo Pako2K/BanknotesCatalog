@@ -29,4 +29,6 @@
     <dimen name="territory_flag_height">32dp</dimen>
     <dimen name="territory_continent_icon_height">36dp</dimen>
     <dimen name="territory_continent_text_width">40dp</dimen>
+
+    <dimen name="favourite_icon_size">28dp</dimen>
 </resources>

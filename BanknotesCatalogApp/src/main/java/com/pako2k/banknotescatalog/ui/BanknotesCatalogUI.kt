@@ -3,23 +3,22 @@ package com.pako2k.banknotescatalog.ui
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -30,6 +29,7 @@ import androidx.navigation.navArgument
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.MainViewModel
+import com.pako2k.banknotescatalog.ui.parts.Bookmarks
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
 import com.pako2k.banknotescatalog.ui.parts.FrontPage
 import com.pako2k.banknotescatalog.ui.parts.Header
@@ -40,6 +40,7 @@ import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -85,13 +86,17 @@ fun MainScreen(
         if (routeStr != defaultRoute && null != MenuOption.values().find { it.name == routeStr }) MenuOption.valueOf(routeStr)
         else null
 
-    Scaffold (
+    val bookmarksState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    // Screen content
+    Scaffold(
         topBar = {
-                Header()
-                },
+            Header { scope.launch { bookmarksState.apply { if(isOpen) close() else open() } } }
+        },
         bottomBar = {
             Column {
-                if (mainMenuOption != null) {
+                if (mainMenuOption != null && mainMenuOption != MenuOption.LOG_IN) {
                     ContinentFilter(
                         windowWidth = windowSize.widthSizeClass,
                         continents = mainViewModel.continents.values.toList(),
@@ -110,80 +115,103 @@ fun MainScreen(
             }
         },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = defaultRoute,
-            modifier = Modifier
-                .padding(innerPadding)
+        Bookmarks(
+            territories = uiState.favouriteTerritories.map { Pair(it,mainViewModel.territoryViewData(it)?.name?:"") }.sortedBy { it.second },
+            currencies = listOf(),
+            state = bookmarksState,
+            onClick = { isTer, id ->
+                scope.launch {bookmarksState.apply { close()}}
+                if(isTer) navController.navigate("COUNTRY/$id") else navController.navigate("CURRENCY/$id")
+                      },
+            drawerPadding = innerPadding
         ) {
-            composable(defaultRoute){
-                FrontPage(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                )
-            }
-            composable(MenuOption.COUNTRIES.name){
-                TerritoriesView(
-                    screenWidth = screenWidth,
-                    table = uiState.territoriesTable,
-                    data = mainViewModel.territoriesViewData(),
-                    onCountryClick = {
-                        navController.navigate("COUNTRY/$it")
-                                     },
-                    sortCallback = { mainViewModel.sortTerritoriesBy(it) }
-                )
-            }
-            composable(MenuOption.CURRENCIES.name){
-                CurrenciesView(
-                    screenWidth = screenWidth,
-                    table = uiState.currenciesTable,
-                    data = mainViewModel.currenciesViewData(),
-                    onCurrencyClick = {
-                        navController.navigate("CURRENCY/$it")
-                    },
-                    onCountryClick = {
-                        navController.navigate("COUNTRY/$it")
-                    },
-                    sortCallback = { mainViewModel.sortCurrenciesBy(it) }
-                )
-            }
-            composable(MenuOption.DENOMINATIONS.name){
-                Text ("DENOMINATIONS")
-            }
-            composable(MenuOption.YEARS.name){
-                Text ("YEARS")
-            }
-            composable(MenuOption.COLLECTION.name){
-                Text ("COLLECTION")
-            }
-            composable(MenuOption.LOG_IN.name){
-                Text ("SIGN IN / SIGN UP")
-            }
-            composable("COUNTRY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
-                val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                val data = mainViewModel.territoryViewData(id)
-                if (data!= null)
-                    TerritoryView(
-                        windowWidth = windowSize.widthSizeClass,
-                        data = data,
+
+            NavHost(
+                navController = navController,
+                startDestination = defaultRoute,
+                //modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(defaultRoute) {
+                    FrontPage(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    )
+                }
+                composable(MenuOption.COUNTRIES.name) {
+                    TerritoriesView(
+                        screenWidth = screenWidth,
+                        table = uiState.territoriesTable,
+                        data = mainViewModel.territoriesViewData(),
                         onCountryClick = {
                             navController.navigate("COUNTRY/$it")
-                        }
+                        },
+                        sortCallback = { mainViewModel.sortTerritoriesBy(it) }
                     )
-            }
-            composable("CURRENCY/{id}", arguments = listOf(navArgument("id"){type = NavType.IntType} )){navBackStackEntry ->
-                val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                val data = mainViewModel.currencyViewData(id)
-                if (data!= null)
-                    CurrencyView(
-                        currency = data,
+                }
+                composable(MenuOption.CURRENCIES.name) {
+                    CurrenciesView(
+                        screenWidth = screenWidth,
+                        table = uiState.currenciesTable,
+                        data = mainViewModel.currenciesViewData(),
+                        onCurrencyClick = {
+                            navController.navigate("CURRENCY/$it")
+                        },
+                        onCountryClick = {
+                            navController.navigate("COUNTRY/$it")
+                        },
+                        sortCallback = { mainViewModel.sortCurrenciesBy(it) }
                     )
+                }
+                composable(MenuOption.DENOMINATIONS.name) {
+                    Text("DENOMINATIONS")
+                }
+                composable(MenuOption.YEARS.name) {
+                    Text("YEARS")
+                }
+                composable(MenuOption.COLLECTION.name) {
+                    Text("COLLECTION")
+                }
+                composable(MenuOption.LOG_IN.name) {
+                    Text("SIGN IN / SIGN UP")
+                }
+                composable(
+                    "COUNTRY/{id}",
+                    arguments = listOf(navArgument("id") {
+                        type = NavType.IntType
+                    })
+                ) { navBackStackEntry ->
+                    val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                    val data = mainViewModel.territoryViewData(id)
+                    if (data != null)
+                        TerritoryView(
+                            windowWidth = windowSize.widthSizeClass,
+                            data = data,
+                            isFavourite = uiState.favouriteTerritories.contains(id),
+                            onCountryClick = {
+                                navController.navigate("COUNTRY/$it")
+                            },
+                            onAddFavourite = { mainViewModel.updateFavouriteTer(id) }
+                        )
+                }
+                composable(
+                    "CURRENCY/{id}",
+                    arguments = listOf(navArgument("id") {
+                        type = NavType.IntType
+                    })
+                ) { navBackStackEntry ->
+                    val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                    val data = mainViewModel.currencyViewData(id)
+                    if (data != null)
+                        CurrencyView(
+                            currency = data,
+                        )
+                }
             }
         }
-
     }
 }
+
 
 
 
@@ -192,6 +220,7 @@ fun MainScreen(
 @Composable
 fun IMainScreenPreview() {
     BanknotesCatalogTheme {
-        MainScreen(WindowSizeClass.calculateFromSize(size = DpSize(400.dp,800.dp)), 400.dp, viewModel(factory = MainViewModel.Factory) )
+
+        //MainScreen(WindowSizeClass.calculateFromSize(size = DpSize(400.dp,800.dp)), 400.dp, viewModel(factory = MainViewModel.Factory) )
     }
 }

@@ -122,7 +122,7 @@ fun SummaryTableUI(
 
             if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
                 Icon(
-                    painter = painterResource(R.drawable.baseline_keyboard_double_arrow_right_16),
+                    painter = painterResource(R.drawable.double_arrow_right_icon),
                     contentDescription = null,
                     modifier = Modifier
                         .alpha(0.8f)

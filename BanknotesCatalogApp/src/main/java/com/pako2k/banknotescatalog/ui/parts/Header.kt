@@ -8,11 +8,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +36,8 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 @Composable
 fun Header(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBookmarksClicked: () -> Unit
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start Header")
 
@@ -50,26 +54,39 @@ fun Header(
                 contentDescription = "",
                 modifier = Modifier.fillMaxSize()
             )
-            Column {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(dimensionResource(id = R.dimen.small_padding))
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.boc),
-                        contentDescription = "Banknote Icon",
-                        modifier = Modifier.size(
-                            width = dimensionResource(id = R.dimen.header_height) * 2,
-                            height = dimensionResource(id = R.dimen.header_height)
-                        )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(dimensionResource(id = R.dimen.small_padding))
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.boc),
+                    contentDescription = "Banknote Icon",
+                    modifier = Modifier.size(
+                        width = dimensionResource(id = R.dimen.header_height) * 2,
+                        height = dimensionResource(id = R.dimen.header_height)
                     )
-                    Text(
-                        text = stringResource(id = R.string.header_title),
-                        color = MaterialTheme.colorScheme.background,
-                        style = MaterialTheme.typography.displayLarge,
-                        modifier = Modifier
-                            .padding(start = dimensionResource(id = R.dimen.medium_padding))
+                )
+                Text(
+                    text = stringResource(id = R.string.header_title),
+                    color = MaterialTheme.colorScheme.background,
+                    style = MaterialTheme.typography.displayLarge,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(start = dimensionResource(id = R.dimen.medium_padding))
+
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = onBookmarksClicked,
+                    modifier = Modifier
+                        .size(dimensionResource(id = R.dimen.header_height))
+                        .padding(end = dimensionResource(id = R.dimen.small_padding))
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.bookmarks_icon),
+                        contentDescription = "Bookmarks Icon",
+                        tint = MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
                     )
                 }
             }
@@ -96,6 +113,6 @@ fun Header(
 @Composable
 fun HeaderPreview() {
     BanknotesCatalogTheme {
-        Header()
+        Header{}
     }
 }

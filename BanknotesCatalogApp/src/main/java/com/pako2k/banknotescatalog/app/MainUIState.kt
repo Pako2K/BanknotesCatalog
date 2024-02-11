@@ -17,6 +17,8 @@ data class MainUiState (
 
     val userLoggedIn : Boolean = false,
 
+    val favouriteTerritories : List<UInt> = listOf(),
+
     val summaryTableSortingFlag : Boolean = false,
     val territoriesTable : SummaryTable = SummaryTable(
         columns = listOf(
