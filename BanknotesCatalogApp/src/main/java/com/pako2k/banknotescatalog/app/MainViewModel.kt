@@ -1,9 +1,12 @@
 package com.pako2k.banknotescatalog.app
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -14,6 +17,7 @@ import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.data.TerritoryTypes
+import com.pako2k.banknotescatalog.data.UserPreferencesRepository
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -21,6 +25,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+private const val USER_PREFERENCES_NAME = "banknotes_user_preferences"
+
+// Local datastore
+val Context.appUserDataStore by preferencesDataStore (
+    name = USER_PREFERENCES_NAME
+)
 
 
 // Class implementing the Application Logic
@@ -40,6 +51,10 @@ class MainViewModel private constructor(
 
     // Private set so it cannot be updated outside this MainViewModel
     private val repository : BanknotesCatalogRepository
+
+    // User Preferences Repository
+    private val _userPreferencesRepository = UserPreferencesRepository(application.appUserDataStore)
+    val userPreferencesFlow = _userPreferencesRepository.userPreferencesFlow.asLiveData()
 
     val continents
         get() = repository.continents
@@ -112,11 +127,11 @@ class MainViewModel private constructor(
 
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT MainViewModel")
 
-        val url = ctx.getString(R.string.BANKNOTES_API_BASE_URL)
-        val timeout = ctx.resources.getInteger(R.integer.BANKNOTES_API_TIMEOUT)
-
         // Create apiClient instance
-        val apiClient = BanknotesAPIClient(url, timeout)
+        val apiClient = BanknotesAPIClient(
+            baseURL = ctx.getString(R.string.BANKNOTES_API_BASE_URL),
+            timeout = ctx.resources.getInteger(R.integer.BANKNOTES_API_TIMEOUT)
+        )
 
         repository = BanknotesCatalogRepository.create(ctx, apiClient)
         territoriesViewData = listOf()
@@ -158,7 +173,7 @@ class MainViewModel private constructor(
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with ${result.toString()}")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with $result")
             return@async result
         }
 
@@ -177,7 +192,7 @@ class MainViewModel private constructor(
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies with ${result.toString()}")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies with $result")
             return@async result
         }
 
@@ -197,16 +212,12 @@ class MainViewModel private constructor(
     }
 
 
-    fun updateFavouriteTer(id : UInt){
-        // Add or remove id
-        val newList = uiState.value.favouriteTerritories.toMutableList()
+    suspend fun updateFavouriteTer(id : UInt){
+        _userPreferencesRepository.updateFavTer(id)
+    }
 
-        if (!newList.remove(id)) newList.add(id)
-        _mainUiState.update {currentState ->
-            currentState.copy(
-                favouriteTerritories = newList
-            )
-        }
+    suspend fun updateHistoryTer(id : UInt){
+        _userPreferencesRepository.updateHistTer(id)
     }
 
     fun setContinentFilter(continentId : UInt) {

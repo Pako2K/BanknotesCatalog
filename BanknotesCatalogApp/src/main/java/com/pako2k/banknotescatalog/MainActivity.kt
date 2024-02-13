@@ -31,8 +31,6 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 val windowSizeClass : WindowSizeClass = calculateWindowSizeClass(this)
 
-
-
                 val displayMetrics: DisplayMetrics = applicationContext.resources.displayMetrics
                 val screenWidth = Dp(displayMetrics.widthPixels / displayMetrics.density)
 

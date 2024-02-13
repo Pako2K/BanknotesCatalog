@@ -3,12 +3,15 @@ package com.pako2k.banknotescatalog.ui.parts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -44,6 +47,8 @@ private const val DRAWER_WIDTH = 250
 fun Bookmarks (
     territories : List<Pair<UInt,String>>,
     currencies: List<Pair<UInt,String>>,
+    historyTer : List<Pair<UInt,String>>,
+    historyCur: List<Pair<UInt,String>>,
     state : DrawerState,
     drawerPadding : PaddingValues,
     onClick : (isTerritory : Boolean, id : UInt) -> Unit,
@@ -69,13 +74,14 @@ fun Bookmarks (
                             clip = false,
                             shape = RoundedCornerShape(28.dp)// As per documentation
                         )
+                        .verticalScroll(rememberScrollState())
 
                 ) {
                     Text(
                         text = "Favourites",
                         style = MaterialTheme.typography.displaySmall,
                         modifier = Modifier
-                            .padding(horizontal = dimensionResource(id = R.dimen.large_padding))
+                            .padding(horizontal = dimensionResource(id = R.dimen.xl_padding))
                             .padding(top = dimensionResource(id = R.dimen.large_padding))
                             .padding(bottom = dimensionResource(id = R.dimen.small_padding))
                     )
@@ -89,7 +95,7 @@ fun Bookmarks (
                             modifier = Modifier.padding(dimensionResource(id = R.dimen.large_padding)))
 
                     if (territories.isNotEmpty()) {
-                        SectionTitle("Territories")
+                        SubsectionTitle("Territories")
 
                         territories.forEach {
                             Item(
@@ -110,7 +116,7 @@ fun Bookmarks (
                         )
 
                     if(currencies.isNotEmpty()) {
-                        SectionTitle("Currencies")
+                        SubsectionTitle("Currencies")
                         currencies.forEach {
                             Item(
                                 id = it.first,
@@ -120,6 +126,36 @@ fun Bookmarks (
                             )
                         }
                     }
+
+                    Text(
+                        text = "Last visited",
+                        style = MaterialTheme.typography.displaySmall,
+                        modifier = Modifier
+                            .padding(horizontal = dimensionResource(id = R.dimen.xl_padding))
+                            .padding(top = dimensionResource(id = R.dimen.large_padding))
+                            .padding(bottom = dimensionResource(id = R.dimen.small_padding))
+                    )
+                    Divider(thickness = 2.dp)
+
+                    historyTer.reversed().forEach {
+                        LastVisitedItem(
+                            id = it.first,
+                            text = it.second,
+                            backgroundColor = backgroundColor,
+                            onClick = { id -> onClick(true, id) }
+                        )
+                    }
+                    historyCur.reversed().forEach {
+                        LastVisitedItem(
+                            id = it.first,
+                            text = it.second,
+                            backgroundColor = backgroundColor,
+                            onClick = { id -> onClick(false, id) }
+                        )
+                    }
+                    val bottomPadding = if (historyCur.isEmpty() && historyTer.isEmpty())  R.dimen.xxl_padding else R.dimen.medium_padding
+                    Spacer(modifier = Modifier.heightIn(min = dimensionResource(id = bottomPadding)))
+
                 }
             }
         ) {
@@ -130,8 +166,9 @@ fun Bookmarks (
     }
 }
 
+
 @Composable
-fun SectionTitle(
+fun SubsectionTitle(
     text : String,
 ){
     Text(
@@ -176,8 +213,41 @@ fun Item(
     )
 }
 
+@Composable
+fun LastVisitedItem(
+    id : UInt,
+    text : String,
+    backgroundColor : Color,
+    onClick : (UInt) -> Unit
+){
+    NavigationDrawerItem(
+        shape = RectangleShape,
+        label = {
+            Text(
+                text = text,
+                //fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                maxLines = 1,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = dimensionResource(id = R.dimen.large_padding))
+            )
+        },
+        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = backgroundColor),
+        selected = false,
+        onClick = { onClick(id) },
+        modifier = Modifier
+            .heightIn(max = MaterialTheme.typography.bodyLarge.fontSize.value.dp * 2)
 
-private const val PREVIEW_WIDTH = 400
+    )
+}
+
+
+
+
+private const val PREVIEW_WIDTH = 380
 private const val PREVIEW_HEIGHT = 900
 
 private val testTerritories = listOf(
@@ -190,6 +260,18 @@ private val testCurrencies = listOf(
     1u to "Peseta",
 )
 
+private val testHistoryTer = listOf<Pair<UInt,String>>(
+//    1u to "United States",
+//    2u to "France",
+)
+
+private val testHistoryCur = listOf<Pair<UInt,String>>(
+//    3u to "Franc",
+//    4u to "Dollar",
+//    5u to "Sol",
+)
+
+
 @Preview (widthDp = PREVIEW_WIDTH, heightDp = PREVIEW_HEIGHT)
 @Composable
 fun BookmarksPreview() {
@@ -197,6 +279,8 @@ fun BookmarksPreview() {
         Bookmarks (
             testTerritories,
             testCurrencies,
+            testHistoryTer,
+            testHistoryCur,
             state = DrawerState(DrawerValue.Open),
             PaddingValues(vertical = 20.dp),
             {_,_ ->}

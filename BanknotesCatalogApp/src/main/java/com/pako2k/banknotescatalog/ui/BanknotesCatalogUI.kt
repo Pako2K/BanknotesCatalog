@@ -9,11 +9,12 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -51,8 +52,7 @@ fun BanknotesCatalogUI(
 ){
     Log.d(stringResource(R.string.app_log_tag),"Start BanknotesCatalogUI")
 
-    // uiState as state, to trigger recompositions of the whole UI
-    //val uiState by mainViewModel.uiState.collectAsState()
+    // initializationState as state, to trigger recompositions of the whole UI
     val initializationState by mainViewModel.initializationState.collectAsState()
 
     if ( initializationState.state == ComponentState.DONE){
@@ -74,6 +74,10 @@ fun MainScreen(
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
 
+    // userPreferences as state, to trigger recompositions
+    val userPreferences by mainViewModel.userPreferencesFlow.observeAsState()
+
+    // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -116,8 +120,10 @@ fun MainScreen(
         },
     ) { innerPadding ->
         Bookmarks(
-            territories = uiState.favouriteTerritories.map { Pair(it,mainViewModel.territoryViewData(it)?.name?:"") }.sortedBy { it.second },
+            territories = userPreferences?.favouriteTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?.sortedBy { it.second }?: listOf(),
             currencies = listOf(),
+            historyTer = userPreferences?.historyTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?: listOf(),
+            historyCur = listOf(),
             state = bookmarksState,
             onClick = { isTer, id ->
                 scope.launch {bookmarksState.apply { close()}}
@@ -182,16 +188,18 @@ fun MainScreen(
                     })
                 ) { navBackStackEntry ->
                     val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                    LaunchedEffect(id){ mainViewModel.updateHistoryTer(id) }
                     val data = mainViewModel.territoryViewData(id)
                     if (data != null)
                         TerritoryView(
                             windowWidth = windowSize.widthSizeClass,
                             data = data,
-                            isFavourite = uiState.favouriteTerritories.contains(id),
+                            isFavourite = userPreferences?.favouriteTerritories?.contains(id)?:false,
+                            // uiState.favouriteTerritories.contains(id),
                             onCountryClick = {
                                 navController.navigate("COUNTRY/$it")
                             },
-                            onAddFavourite = { mainViewModel.updateFavouriteTer(id) }
+                            onAddFavourite = { scope.launch {mainViewModel.updateFavouriteTer(id)} }
                         )
                 }
                 composable(
@@ -215,7 +223,6 @@ fun MainScreen(
 
 
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview
 @Composable
 fun IMainScreenPreview() {
