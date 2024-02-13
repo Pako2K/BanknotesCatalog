@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -62,27 +61,48 @@ class UserPreferencesRepository(
 
 
     suspend fun updateFavTer(id: UInt) {
-        dataStore.edit { preferences ->
-            val newList = preferences[PreferencesKeys.FAV_TER]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
-            if (!newList.remove(id)) newList.add(id)
-            val strValue = newList.joinToString(separator = DELIMITER)
-            if (strValue.isNotEmpty())
-                preferences[PreferencesKeys.FAV_TER] = strValue
-            else
-                preferences.remove(PreferencesKeys.FAV_TER)
-        }
+        updateFavouritePref(id, PreferencesKeys.FAV_TER, PreferencesKeys.HIST_TER)
     }
 
     suspend fun updateFavCur(id: UInt) {
-
+        updateFavouritePref(id, PreferencesKeys.FAV_CUR, PreferencesKeys.HIST_CUR)
     }
 
     suspend fun updateHistTer(id: UInt) {
+        updateHistoryPref(id, PreferencesKeys.HIST_TER, PreferencesKeys.FAV_TER)
+    }
+
+    suspend fun updateHistCur(id: UInt) {
+        updateHistoryPref(id, PreferencesKeys.HIST_CUR, PreferencesKeys.FAV_CUR)
+    }
+
+    private suspend fun updateFavouritePref(id : UInt, favKey : Preferences.Key<String>, histKey: Preferences.Key<String> ){
         dataStore.edit { preferences ->
-            val newList = preferences[PreferencesKeys.HIST_TER]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
+            val newList = preferences[favKey]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
+            if (!newList.remove(id)) newList.add(id)
+            val strValue = newList.joinToString(separator = DELIMITER)
+            if (strValue.isNotEmpty())
+                preferences[favKey] = strValue
+            else
+                preferences.remove(favKey)
+
+            // Remove from history
+            val newHistList = preferences[histKey]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
+            newHistList.remove(id)
+            val strValue2 = newHistList.joinToString(separator = DELIMITER)
+            if (strValue2.isNotEmpty())
+                preferences[histKey] = strValue2
+            else
+                preferences.remove(histKey)
+        }
+    }
+
+    private suspend fun updateHistoryPref(id : UInt, histKey : Preferences.Key<String>, favKey: Preferences.Key<String> ){
+        dataStore.edit { preferences ->
+            val newList = preferences[histKey]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
 
             // Add id if not there yet, and not in the favourites list.
-            val favList = preferences[PreferencesKeys.FAV_TER]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
+            val favList = preferences[favKey]?.split(DELIMITER)?.map { it.toUInt() }?.toMutableList() ?: mutableListOf()
             if (!newList.contains(id) && !favList.contains(id)) newList.add(id)
 
             // Remove first element if list is bigger than HISTORY_DEPTH
@@ -90,22 +110,10 @@ class UserPreferencesRepository(
 
             val strValue = newList.joinToString(separator = DELIMITER)
             if (strValue.isNotEmpty())
-                preferences[PreferencesKeys.HIST_TER] = strValue
+                preferences[histKey] = strValue
             else
-                preferences.remove(PreferencesKeys.HIST_TER)
+                preferences.remove(histKey)
         }
-
-        val newList = userPreferencesFlow.first().historyTerritories.toMutableList()
-        if (!newList.contains(id)) {
-            newList.add(id)
-            dataStore.edit { preferences ->
-                preferences[PreferencesKeys.HIST_TER] = newList.joinToString(DELIMITER)
-            }
-        }
-    }
-
-    suspend fun updateHistCur(id: UInt) {
-       
     }
 
     private fun mapUserPreferences(preferences: Preferences): UserPreferences {

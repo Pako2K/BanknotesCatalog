@@ -121,9 +121,9 @@ fun MainScreen(
     ) { innerPadding ->
         Bookmarks(
             territories = userPreferences?.favouriteTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?.sortedBy { it.second }?: listOf(),
-            currencies = listOf(),
+            currencies = userPreferences?.favouriteCurrencies?.map { Pair(it, mainViewModel.currencyViewData(it)?.name?:"") }?.sortedBy { it.second }?: listOf(),
             historyTer = userPreferences?.historyTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?: listOf(),
-            historyCur = listOf(),
+            historyCur = userPreferences?.historyCurrencies?.map { Pair(it, mainViewModel.currencyViewData(it)?.name?:"") }?: listOf(),
             state = bookmarksState,
             onClick = { isTer, id ->
                 scope.launch {bookmarksState.apply { close()}}
@@ -209,6 +209,7 @@ fun MainScreen(
                     })
                 ) { navBackStackEntry ->
                     val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                    LaunchedEffect(id){ mainViewModel.updateHistoryCur(id) }
                     val data = mainViewModel.currencyViewData(id)
                     if (data != null)
                         CurrencyView(

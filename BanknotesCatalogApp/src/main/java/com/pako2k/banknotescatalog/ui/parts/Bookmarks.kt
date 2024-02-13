@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -128,7 +129,7 @@ fun Bookmarks (
                     }
 
                     Text(
-                        text = "Last visited",
+                        text = "Recently visited",
                         style = MaterialTheme.typography.displaySmall,
                         modifier = Modifier
                             .padding(horizontal = dimensionResource(id = R.dimen.xl_padding))
@@ -136,7 +137,7 @@ fun Bookmarks (
                             .padding(bottom = dimensionResource(id = R.dimen.small_padding))
                     )
                     Divider(thickness = 2.dp)
-
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
                     historyTer.reversed().forEach {
                         LastVisitedItem(
                             id = it.first,
@@ -209,7 +210,7 @@ fun Item(
         selected = false,
         onClick = { onClick(id) },
         modifier = Modifier
-            .heightIn(max = MaterialTheme.typography.bodyLarge.fontSize.value.dp * 3)
+            .heightIn(max = MaterialTheme.typography.bodyLarge.fontSize.value.dp * 2.5f)
     )
 }
 
@@ -225,7 +226,6 @@ fun LastVisitedItem(
         label = {
             Text(
                 text = text,
-                //fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 maxLines = 1,
                 textAlign = TextAlign.Start,
@@ -261,7 +261,7 @@ private val testCurrencies = listOf(
 )
 
 private val testHistoryTer = listOf<Pair<UInt,String>>(
-//    1u to "United States",
+    1u to "United States",
 //    2u to "France",
 )
 

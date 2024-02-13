@@ -220,6 +220,14 @@ class MainViewModel private constructor(
         _userPreferencesRepository.updateHistTer(id)
     }
 
+    suspend fun updateFavouriteCur(id : UInt){
+        _userPreferencesRepository.updateFavCur(id)
+    }
+
+    suspend fun updateHistoryCur(id : UInt){
+        _userPreferencesRepository.updateHistCur(id)
+    }
+
     fun setContinentFilter(continentId : UInt) {
         val newSelection =
             if (continentId == uiState.value.selectedContinent) null
