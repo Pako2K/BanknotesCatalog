@@ -1,12 +1,9 @@
 package com.pako2k.banknotescatalog.app
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -17,26 +14,27 @@ import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.data.TerritoryTypes
+import com.pako2k.banknotescatalog.data.UserPreferences
 import com.pako2k.banknotescatalog.data.UserPreferencesRepository
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val USER_PREFERENCES_NAME = "banknotes_user_preferences"
 
-// Local datastore
-val Context.appUserDataStore by preferencesDataStore (
-    name = USER_PREFERENCES_NAME
-)
 
 
 // Class implementing the Application Logic
 class MainViewModel private constructor(
-        application: Application,
+        ctx: Context,
+        private val userPreferencesRepository: UserPreferencesRepository
     ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -52,9 +50,13 @@ class MainViewModel private constructor(
     // Private set so it cannot be updated outside this MainViewModel
     private val repository : BanknotesCatalogRepository
 
-    // User Preferences Repository
-    private val _userPreferencesRepository = UserPreferencesRepository(application.appUserDataStore)
-    val userPreferencesFlow = _userPreferencesRepository.userPreferencesFlow.asLiveData()
+    val userPreferencesState : StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow.map { pref ->
+        UserPreferences(pref.favouriteTerritories, pref.favouriteCurrencies, pref.historyTerritories, pref.historyCurrencies )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = UserPreferences()
+    )
 
     val continents
         get() = repository.continents
@@ -117,16 +119,15 @@ class MainViewModel private constructor(
     companion object {
         val Factory : ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application
+                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as BanknotesCatalogApplication
                 Log.d(application.getString(R.string.app_log_tag), "Create MainViewModel")
-                MainViewModel(application)
+
+                MainViewModel(application.applicationContext, application.userPreferencesRepository)
             }
         }
     }
 
     init {
-        val ctx = application.applicationContext
-
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT MainViewModel")
 
         // Create apiClient instance
@@ -214,20 +215,40 @@ class MainViewModel private constructor(
     }
 
 
-    suspend fun updateFavouriteTer(id : UInt){
-        _userPreferencesRepository.updateFavTer(id)
+    fun updateFavouriteTer(id : UInt){
+        viewModelScope.launch {
+            userPreferencesRepository.updateFavTer(id)
+        }
     }
 
-    suspend fun updateHistoryTer(id : UInt){
-        _userPreferencesRepository.updateHistTer(id)
+    fun updateHistoryTer(id : UInt){
+        viewModelScope.launch {
+            userPreferencesRepository.updateHistTer(id)
+        }
     }
 
-    suspend fun updateFavouriteCur(id : UInt){
-        _userPreferencesRepository.updateFavCur(id)
+    fun updateFavouriteCur(id : UInt){
+        viewModelScope.launch {
+            userPreferencesRepository.updateFavCur(id)
+        }
     }
 
-    suspend fun updateHistoryCur(id : UInt){
-        _userPreferencesRepository.updateHistCur(id)
+    fun updateHistoryCur(id : UInt){
+        viewModelScope.launch {
+            userPreferencesRepository.updateHistCur(id)
+        }
+    }
+
+    fun getCurrencyBookmark(id: UInt) : String? {
+        val cur = currencyViewData(id) ?: return null
+
+        var bookmark = cur.name
+        if (cur.iso3 != null){
+            bookmark += " (${cur.iso3})"
+        }
+        val mainOwner = cur.ownedByExt.maxBy { it.start }.territory.name
+        bookmark += " - $mainOwner"
+        return bookmark
     }
 
     fun setContinentFilter(continentId : UInt) {

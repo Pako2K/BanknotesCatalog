@@ -19,10 +19,10 @@ private const val HISTORY_DEPTH = 5
  * Data Class with the user preferences
  */
 data class UserPreferences(
-    val favouriteTerritories : List<UInt>,
-    val favouriteCurrencies : List<UInt>,
-    val historyTerritories : List<UInt>,
-    val historyCurrencies : List<UInt>,
+    val favouriteTerritories : List<UInt> = listOf(),
+    val favouriteCurrencies : List<UInt> = listOf(),
+    val historyTerritories : List<UInt> = listOf(),
+    val historyCurrencies : List<UInt> = listOf(),
 )
 
 
@@ -35,11 +35,11 @@ class UserPreferencesRepository(
     private val tag: String = "UserPreferencesRepo"
 
     //Keys (and value types) used in the data store
-    private object PreferencesKeys {
-        val FAV_TER = stringPreferencesKey("fav_ter")
-        val FAV_CUR = stringPreferencesKey("fav_cur")
-        val HIST_TER = stringPreferencesKey("hist_ter")
-        val HIST_CUR = stringPreferencesKey("hist_cur")
+    private companion object  {
+        val KEY_FAV_TER = stringPreferencesKey("fav_ter")
+        val KEY_FAV_CUR = stringPreferencesKey("fav_cur")
+        val KEY_HIST_TER = stringPreferencesKey("hist_ter")
+        val KEY_HIST_CUR = stringPreferencesKey("hist_cur")
     }
 
 
@@ -61,19 +61,19 @@ class UserPreferencesRepository(
 
 
     suspend fun updateFavTer(id: UInt) {
-        updateFavouritePref(id, PreferencesKeys.FAV_TER, PreferencesKeys.HIST_TER)
+        updateFavouritePref(id, KEY_FAV_TER, KEY_HIST_TER)
     }
 
     suspend fun updateFavCur(id: UInt) {
-        updateFavouritePref(id, PreferencesKeys.FAV_CUR, PreferencesKeys.HIST_CUR)
+        updateFavouritePref(id, KEY_FAV_CUR, KEY_HIST_CUR)
     }
 
     suspend fun updateHistTer(id: UInt) {
-        updateHistoryPref(id, PreferencesKeys.HIST_TER, PreferencesKeys.FAV_TER)
+        updateHistoryPref(id, KEY_HIST_TER, KEY_FAV_TER)
     }
 
     suspend fun updateHistCur(id: UInt) {
-        updateHistoryPref(id, PreferencesKeys.HIST_CUR, PreferencesKeys.FAV_CUR)
+        updateHistoryPref(id, KEY_HIST_CUR, KEY_FAV_CUR)
     }
 
     private suspend fun updateFavouritePref(id : UInt, favKey : Preferences.Key<String>, histKey: Preferences.Key<String> ){
@@ -117,10 +117,10 @@ class UserPreferencesRepository(
     }
 
     private fun mapUserPreferences(preferences: Preferences): UserPreferences {
-        val favouriteTerritories = preferences[PreferencesKeys.FAV_TER]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
-        val favouriteCurrencies = preferences[PreferencesKeys.FAV_CUR]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
-        val historyTerritories = preferences[PreferencesKeys.HIST_TER]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
-        val historyCurrencies = preferences[PreferencesKeys.HIST_CUR]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
+        val favouriteTerritories = preferences[KEY_FAV_TER]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
+        val favouriteCurrencies = preferences[KEY_FAV_CUR]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
+        val historyTerritories = preferences[KEY_HIST_TER]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
+        val historyCurrencies = preferences[KEY_HIST_CUR]?.split(DELIMITER)?.map { it.toUInt() }?: listOf()
 
         return UserPreferences(favouriteTerritories, favouriteCurrencies, historyTerritories, historyCurrencies)
     }

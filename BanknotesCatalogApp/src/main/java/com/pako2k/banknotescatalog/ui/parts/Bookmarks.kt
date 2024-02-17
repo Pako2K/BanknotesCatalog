@@ -1,6 +1,7 @@
 package com.pako2k.banknotescatalog.ui.parts
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -19,15 +20,12 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontStyle
@@ -41,7 +39,7 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 
-private const val DRAWER_WIDTH = 250
+private const val DRAWER_WIDTH = 280
 
 
 @Composable
@@ -102,7 +100,6 @@ fun Bookmarks (
                             Item(
                                 id = it.first,
                                 text = it.second,
-                                backgroundColor = backgroundColor,
                                 onClick = { id -> onClick(true, id) }
                             )
                         }
@@ -122,7 +119,6 @@ fun Bookmarks (
                             Item(
                                 id = it.first,
                                 text = it.second,
-                                backgroundColor = backgroundColor,
                                 onClick = {id -> onClick(false, id) }
                             )
                         }
@@ -142,7 +138,6 @@ fun Bookmarks (
                         LastVisitedItem(
                             id = it.first,
                             text = it.second,
-                            backgroundColor = backgroundColor,
                             onClick = { id -> onClick(true, id) }
                         )
                     }
@@ -150,7 +145,6 @@ fun Bookmarks (
                         LastVisitedItem(
                             id = it.first,
                             text = it.second,
-                            backgroundColor = backgroundColor,
                             onClick = { id -> onClick(false, id) }
                         )
                     }
@@ -188,29 +182,22 @@ fun SubsectionTitle(
 fun Item(
     id : UInt,
     text : String,
-    backgroundColor : Color,
     onClick : (UInt) -> Unit
 ){
-    NavigationDrawerItem(
-        shape = RectangleShape,
-        label = {
-            Text(
-                text = text,
-                fontWeight = FontWeight.Bold,
-                fontStyle = FontStyle.Italic,
-                maxLines = 1,
-                textAlign = TextAlign.End,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = dimensionResource(id = R.dimen.large_padding))
-            )
-        },
-        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = backgroundColor),
-        selected = false,
-        onClick = { onClick(id) },
+    Text(
+        text = text,
+        fontWeight = FontWeight.Bold,
+        fontStyle = FontStyle.Italic,
+        maxLines = 2,
+        textAlign = TextAlign.End,
+        style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier
-            .heightIn(max = MaterialTheme.typography.bodyLarge.fontSize.value.dp * 2.5f)
+            .fillMaxWidth()
+            .padding(
+                horizontal = dimensionResource(id = R.dimen.xl_padding),
+                vertical = dimensionResource(id = R.dimen.medium_padding)
+            )
+            .clickable { onClick(id) }
     )
 }
 
@@ -218,29 +205,22 @@ fun Item(
 fun LastVisitedItem(
     id : UInt,
     text : String,
-    backgroundColor : Color,
     onClick : (UInt) -> Unit
 ){
-    NavigationDrawerItem(
-        shape = RectangleShape,
-        label = {
-            Text(
-                text = text,
-                fontStyle = FontStyle.Italic,
-                maxLines = 1,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = dimensionResource(id = R.dimen.large_padding))
-            )
-        },
-        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = backgroundColor),
-        selected = false,
-        onClick = { onClick(id) },
+    Text(
+        text = text,
+        fontStyle = FontStyle.Italic,
+        maxLines = 2,
+        textAlign = TextAlign.End,
+        style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier
-            .heightIn(max = MaterialTheme.typography.bodyLarge.fontSize.value.dp * 2)
-
+            .fillMaxWidth()
+            .padding(
+                horizontal = dimensionResource(id = R.dimen.xl_padding)
+            )
+            .padding(top = dimensionResource(id = R.dimen.small_padding),
+                bottom = dimensionResource(id = R.dimen.medium_padding))
+            .clickable { onClick(id) }
     )
 }
 
@@ -257,7 +237,7 @@ private val testTerritories = listOf(
 )
 
 private val testCurrencies = listOf(
-    1u to "Peseta",
+    1u to "Convertible Mark (BAM) - Bosnia and Herzegovina",
 )
 
 private val testHistoryTer = listOf<Pair<UInt,String>>(
@@ -266,7 +246,7 @@ private val testHistoryTer = listOf<Pair<UInt,String>>(
 )
 
 private val testHistoryCur = listOf<Pair<UInt,String>>(
-//    3u to "Franc",
+    3u to "Convertible Mark (BAM) - Bosnia and Herzegovina",
 //    4u to "Dollar",
 //    5u to "Sol",
 )

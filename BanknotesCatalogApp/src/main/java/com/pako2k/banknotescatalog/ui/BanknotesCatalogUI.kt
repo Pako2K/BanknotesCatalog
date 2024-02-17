@@ -11,10 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -75,7 +73,7 @@ fun MainScreen(
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
 
     // userPreferences as state, to trigger recompositions
-    val userPreferences by mainViewModel.userPreferencesFlow.observeAsState()
+    val userPreferences by mainViewModel.userPreferencesState.collectAsState()
 
     // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
@@ -120,10 +118,10 @@ fun MainScreen(
         },
     ) { innerPadding ->
         Bookmarks(
-            territories = userPreferences?.favouriteTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?.sortedBy { it.second }?: listOf(),
-            currencies = userPreferences?.favouriteCurrencies?.map { Pair(it, mainViewModel.currencyViewData(it)?.name?:"") }?.sortedBy { it.second }?: listOf(),
-            historyTer = userPreferences?.historyTerritories?.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }?: listOf(),
-            historyCur = userPreferences?.historyCurrencies?.map { Pair(it, mainViewModel.currencyViewData(it)?.name?:"") }?: listOf(),
+            territories = userPreferences.favouriteTerritories.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }.sortedBy { it.second },
+            currencies = userPreferences.favouriteCurrencies.map { Pair(it, mainViewModel.getCurrencyBookmark(it)?:"") }.sortedBy { it.second },
+            historyTer = userPreferences.historyTerritories.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") },
+            historyCur = userPreferences.historyCurrencies.map { Pair(it, mainViewModel.getCurrencyBookmark(it)?:"") },
             state = bookmarksState,
             onClick = { isTer, id ->
                 scope.launch {bookmarksState.apply { close()}}
@@ -188,18 +186,17 @@ fun MainScreen(
                     })
                 ) { navBackStackEntry ->
                     val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                    LaunchedEffect(id){ mainViewModel.updateHistoryTer(id) }
+                    mainViewModel.updateHistoryTer(id)
                     val data = mainViewModel.territoryViewData(id)
                     if (data != null)
                         TerritoryView(
                             windowWidth = windowSize.widthSizeClass,
                             data = data,
-                            isFavourite = userPreferences?.favouriteTerritories?.contains(id)?:false,
-                            // uiState.favouriteTerritories.contains(id),
+                            isFavourite = userPreferences.favouriteTerritories.contains(id),
                             onCountryClick = {
                                 navController.navigate("COUNTRY/$it")
                             },
-                            onAddFavourite = { scope.launch {mainViewModel.updateFavouriteTer(id)} }
+                            onAddFavourite = { mainViewModel.updateFavouriteTer(id) }
                         )
                 }
                 composable(
@@ -209,13 +206,13 @@ fun MainScreen(
                     })
                 ) { navBackStackEntry ->
                     val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                    LaunchedEffect(id){ mainViewModel.updateHistoryCur(id) }
+                    mainViewModel.updateHistoryCur(id)
                     val data = mainViewModel.currencyViewData(id)
                     if (data != null)
                         CurrencyView(
                             data = data,
                             windowWidth = windowSize.widthSizeClass,
-                            isFavourite = userPreferences?.favouriteCurrencies?.contains(id)?:false,
+                            isFavourite = userPreferences.favouriteCurrencies.contains(id),
                             onCountryClick = {
                                 navController.navigate("COUNTRY/$it")
                             },
@@ -223,7 +220,7 @@ fun MainScreen(
                                 navController.navigate("CURRENCY/$it")
                             },
                             onAddFavourite = {
-                                scope.launch {mainViewModel.updateFavouriteCur(id)}
+                                mainViewModel.updateFavouriteCur(id)
                             }
                         )
                 }
