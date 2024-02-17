@@ -108,7 +108,9 @@ class MainViewModel private constructor(
         return uiData
     }
     fun currencyViewData(curId : UInt) : Currency? {
-        return repository.currencies.find{ it.id == curId }
+        val cur = (repository.currencies.find{ it.id == curId })
+        cur?.extend(territoriesList = repository.territories, flags = repository.flags, currenciesList = repository.currencies)
+        return cur
     }
 
     // ViewModel can only be created by ViewModelProvider.Factory

@@ -45,7 +45,7 @@ data class Territory (
     var predecessorsExt : List<Territory> = listOf()
         private set
 
-    // Extend with additional data this territory ane the related ones
+    // Extend with additional data this territory
     fun extend(
        territoriesList: List<Territory>,
        flags: Map<String,ImageBitmap>
@@ -76,8 +76,6 @@ data class Territory (
         predecessorsExt = predecessorsMutableList
 
         isExtended = true
-
-        return
     }
 
     override fun equals(other: Any?): Boolean {

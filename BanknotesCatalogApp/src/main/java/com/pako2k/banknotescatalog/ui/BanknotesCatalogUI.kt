@@ -213,7 +213,18 @@ fun MainScreen(
                     val data = mainViewModel.currencyViewData(id)
                     if (data != null)
                         CurrencyView(
-                            currency = data,
+                            data = data,
+                            windowWidth = windowSize.widthSizeClass,
+                            isFavourite = userPreferences?.favouriteCurrencies?.contains(id)?:false,
+                            onCountryClick = {
+                                navController.navigate("COUNTRY/$it")
+                            },
+                            onCurrencyClick = {
+                                navController.navigate("CURRENCY/$it")
+                            },
+                            onAddFavourite = {
+                                scope.launch {mainViewModel.updateFavouriteCur(id)}
+                            }
                         )
                 }
             }

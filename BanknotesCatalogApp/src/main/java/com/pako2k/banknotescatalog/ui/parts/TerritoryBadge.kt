@@ -49,7 +49,7 @@ fun TerritoryBadge(
             .clickable {
                 onClick(territory.id)
             }
-            .background(background_color_territory_badge)
+            .background(background_color_territory_badge, shape = MaterialTheme.shapes.small)
             .border(
                 width = Dp.Hairline,
                 shape = MaterialTheme.shapes.small,

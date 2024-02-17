@@ -1,5 +1,6 @@
 package com.pako2k.banknotescatalog.data
 
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.serialization.Serializable
 
 
@@ -11,8 +12,21 @@ data class TerritoryLink(
 )
 
 @Serializable
+data class TerritoryLinkExt(
+    val territory: Territory,
+    val start : String,
+    val end : String? = null
+)
+
+@Serializable
 data class SuccessorCurrency (
     val id : UInt,
+    val rate: Float? = null
+)
+
+@Serializable
+data class SuccessorCurrencyExt (
+    val currency : Currency,
     val rate: Float? = null
 )
 
@@ -44,9 +58,66 @@ data class Currency (
     val description : String? = null,
     val uri: String,
 ) {
+    val startDate = start.replace('-','.')
+    val endDate = end?.replace('-','.')
+
     val startYear = strDateToYear(start) as Int
     val endYear = strDateToYear(end)
 
+    private var isExtended = false
+
+    var ownedByExt : List<TerritoryLinkExt> = listOf()
+        private set
+    var sharedByExt : List<TerritoryLinkExt> = listOf()
+        private set
+    var usedByExt : List<TerritoryLinkExt> = listOf()
+        private set
+    var successorExt : SuccessorCurrencyExt? = null
+        private set
+
+    // Extend with additional data
+    fun extend(
+        territoriesList: List<Territory>,
+        flags: Map<String,ImageBitmap>,
+        currenciesList: List<Currency>
+    ) {
+        if (isExtended) return
+
+
+        val listTmp = mutableListOf<TerritoryLinkExt>()
+        ownedBy.forEach { terLink ->
+            territoriesList.find { terLink.territory.id == it.id }?.let{
+                it.extend(territoriesList, flags)
+                listTmp.add(TerritoryLinkExt(it, terLink.start.replace('-','.'), terLink.end?.replace('-','.')))
+            }
+        }
+        ownedByExt = listTmp.toList()
+
+        listTmp.clear()
+        sharedBy?.forEach { terLink ->
+            territoriesList.find { terLink.territory.id == it.id }?.let {
+                it.extend(territoriesList, flags)
+                listTmp.add(TerritoryLinkExt(it, terLink.start.replace('-','.'), terLink.end?.replace('-','.')))
+            }
+        }
+        sharedByExt = listTmp.toList()
+
+        listTmp.clear()
+        usedBy?.forEach { terLink ->
+            territoriesList.find { terLink.territory.id == it.id }?.let {
+                it.extend(territoriesList, flags)
+                listTmp.add(TerritoryLinkExt(it, terLink.start.replace('-','.'), terLink.end?.replace('-','.')))
+            }
+        }
+        usedByExt = listTmp.toList()
+
+        if (successor != null)
+            currenciesList.find { successor.id  == it.id }?.let {
+                successorExt = SuccessorCurrencyExt(it, successor.rate)
+            }
+
+        isExtended = true
+    }
 
     private fun strDateToYear(date : String?) : Int? {
         return date?.substring(0, minOf(4, date.length))?.toInt()

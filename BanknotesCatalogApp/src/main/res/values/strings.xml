@@ -26,4 +26,9 @@
     <string name="ter_menu_stats">Stats</string>
     <string name="ter_menu_info">Info</string>
 
+    <string name="cur_menu_issues">Issues</string>
+    <string name="cur_menu_banknotes">Banknotes</string>
+    <string name="cur_menu_stats">Stats</string>
+    <string name="cur_menu_info">Info</string>
+
 </resources>
