@@ -16,7 +16,6 @@ import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.data.TerritoryTypes
 import com.pako2k.banknotescatalog.data.UserPreferences
 import com.pako2k.banknotescatalog.data.UserPreferencesRepository
-import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +33,7 @@ import kotlinx.coroutines.launch
 // Class implementing the Application Logic
 class MainViewModel private constructor(
         ctx: Context,
+        private val repository : BanknotesCatalogRepository,
         private val userPreferencesRepository: UserPreferencesRepository
     ) : ViewModel() {
 
@@ -46,9 +46,6 @@ class MainViewModel private constructor(
     private val _mainUiInitializationState = MutableStateFlow(MainUiInitializationState())
     // Public property to read the UI state
     val initializationState = _mainUiInitializationState.asStateFlow()
-
-    // Private set so it cannot be updated outside this MainViewModel
-    private val repository : BanknotesCatalogRepository
 
     val userPreferencesState : StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow.map { pref ->
         UserPreferences(pref.favouriteTerritories, pref.favouriteCurrencies, pref.historyTerritories, pref.historyCurrencies )
@@ -122,7 +119,11 @@ class MainViewModel private constructor(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as BanknotesCatalogApplication
                 Log.d(application.getString(R.string.app_log_tag), "Create MainViewModel")
 
-                MainViewModel(application.applicationContext, application.userPreferencesRepository)
+                MainViewModel(
+                    application.applicationContext,
+                    application.repository,
+                    application.userPreferencesRepository
+                )
             }
         }
     }
@@ -130,13 +131,7 @@ class MainViewModel private constructor(
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT MainViewModel")
 
-        // Create apiClient instance
-        val apiClient = BanknotesAPIClient(
-            baseURL = ctx.getString(R.string.BANKNOTES_API_BASE_URL),
-            timeout = ctx.resources.getInteger(R.integer.BANKNOTES_API_TIMEOUT)
-        )
 
-        repository = BanknotesCatalogRepository.create(ctx, apiClient)
         territoriesViewData = listOf()
         currenciesViewData = listOf()
 
