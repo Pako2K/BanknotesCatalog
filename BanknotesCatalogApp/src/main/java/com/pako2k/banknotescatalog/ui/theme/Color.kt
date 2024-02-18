@@ -78,3 +78,5 @@ val background_color_territory_badge = Color(0xFFF7F8F8)
 val color_territory_badge = Color(0xFF00696A)
 
 val color_is_favourite = Color(0xFFFFD700)
+
+val color_menu_background = Color(0xFFF9FBFB)

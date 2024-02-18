@@ -78,7 +78,7 @@ fun MainMenu(
             verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.onPrimary)
                 .padding(vertical = dimensionResource(id = R.dimen.small_padding))
         ) {
             val isNarrowScreen = windowSize.widthSizeClass == WindowWidthSizeClass.Compact

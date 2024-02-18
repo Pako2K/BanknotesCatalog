@@ -8,6 +8,8 @@
     <dimen name="xxl_padding">48dp</dimen>
 
     <dimen name="header_height">30dp</dimen>
+    <dimen name="header_menu_icon_size">38dp</dimen>
+    <dimen name="header_menu_icon_size_small">24dp</dimen>
 
     <dimen name="main_menu_icon_size_big">28dp</dimen>
     <dimen name="main_menu_icon_size_small">36dp</dimen>

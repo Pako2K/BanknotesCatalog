@@ -2,6 +2,7 @@ package com.pako2k.banknotescatalog.ui
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,6 +34,7 @@ import com.pako2k.banknotescatalog.ui.parts.Bookmarks
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
 import com.pako2k.banknotescatalog.ui.parts.FrontPage
 import com.pako2k.banknotescatalog.ui.parts.Header
+import com.pako2k.banknotescatalog.ui.parts.HeaderMenu
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
@@ -88,13 +91,24 @@ fun MainScreen(
         if (routeStr != defaultRoute && null != MenuOption.values().find { it.name == routeStr }) MenuOption.valueOf(routeStr)
         else null
 
+    val headerMenuState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bookmarksState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     // Screen content
     Scaffold(
         topBar = {
-            Header { scope.launch { bookmarksState.apply { if(isOpen) close() else open() } } }
+            Header(
+                isMenuEnabled = mainMenuOption!=null && mainMenuOption!=MenuOption.LOG_IN,
+                onMenuClicked = { scope.launch {
+                    bookmarksState.apply { close() }
+                    headerMenuState.apply { if(isOpen) close() else open() }
+                }},
+                onBookmarksClicked =  { scope.launch {
+                    headerMenuState.apply { close() }
+                    bookmarksState.apply { if(isOpen) close() else open() }
+                }}
+            )
         },
         bottomBar = {
             Column {
@@ -103,7 +117,11 @@ fun MainScreen(
                         windowWidth = windowSize.widthSizeClass,
                         continents = mainViewModel.continents.values.toList(),
                         selectedContinentId = uiState.selectedContinent,
-                        onclick = { mainViewModel.setContinentFilter(it) },
+                        onclick = {
+                            scope.launch { headerMenuState.apply { close() } }
+                            scope.launch { bookmarksState.apply { close() } }
+                            mainViewModel.setContinentFilter(it)
+                                  },
                     )
                 }
                 MainMenu(
@@ -111,118 +129,154 @@ fun MainScreen(
                     isLoggedIn = uiState.userLoggedIn,
                     selectedOption = mainMenuOption,
                     onClick = {
+                        scope.launch { headerMenuState.apply { close() } }
+                        scope.launch { bookmarksState.apply { close() } }
                         navController.navigate(it.name)
                     }
                 )
             }
         },
     ) { innerPadding ->
-        Bookmarks(
-            territories = userPreferences.favouriteTerritories.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") }.sortedBy { it.second },
-            currencies = userPreferences.favouriteCurrencies.map { Pair(it, mainViewModel.getCurrencyBookmark(it)?:"") }.sortedBy { it.second },
-            historyTer = userPreferences.historyTerritories.map { Pair(it, mainViewModel.territoryViewData(it)?.name?:"") },
-            historyCur = userPreferences.historyCurrencies.map { Pair(it, mainViewModel.getCurrencyBookmark(it)?:"") },
-            state = bookmarksState,
-            onClick = { isTer, id ->
-                scope.launch {bookmarksState.apply { close()}}
-                if(isTer) navController.navigate("COUNTRY/$id") else navController.navigate("CURRENCY/$id")
-                      },
-            drawerPadding = innerPadding
+        HeaderMenu(
+            state = headerMenuState,
+            drawerPadding = innerPadding,
+            {
+                scope.launch { headerMenuState.apply { close() } }
+            },
+            {
+                scope.launch { headerMenuState.apply { close() } }
+            },
+            {
+                scope.launch { headerMenuState.apply { close() } }
+            },
         ) {
-
-            NavHost(
-                navController = navController,
-                startDestination = defaultRoute,
-                //modifier = Modifier.padding(innerPadding)
+            Bookmarks(
+                territories = userPreferences.favouriteTerritories.map {
+                    Pair(
+                        it,
+                        mainViewModel.territoryViewData(it)?.name ?: ""
+                    )
+                }.sortedBy { it.second },
+                currencies = userPreferences.favouriteCurrencies.map {
+                    Pair(
+                        it,
+                        mainViewModel.getCurrencyBookmark(it) ?: ""
+                    )
+                }.sortedBy { it.second },
+                historyTer = userPreferences.historyTerritories.map {
+                    Pair(
+                        it,
+                        mainViewModel.territoryViewData(it)?.name ?: ""
+                    )
+                },
+                historyCur = userPreferences.historyCurrencies.map {
+                    Pair(
+                        it,
+                        mainViewModel.getCurrencyBookmark(it) ?: ""
+                    )
+                },
+                state = bookmarksState,
+                onClick = { isTer, id ->
+                    scope.launch { bookmarksState.apply { close() } }
+                    if (isTer) navController.navigate("COUNTRY/$id") else navController.navigate("CURRENCY/$id")
+                },
+                drawerPadding = PaddingValues(0.dp)//innerPadding
             ) {
-                composable(defaultRoute) {
-                    FrontPage(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    )
-                }
-                composable(MenuOption.COUNTRIES.name) {
-                    TerritoriesView(
-                        screenWidth = screenWidth,
-                        table = uiState.territoriesTable,
-                        data = mainViewModel.territoriesViewData(),
-                        onCountryClick = {
-                            navController.navigate("COUNTRY/$it")
-                        },
-                        sortCallback = { mainViewModel.sortTerritoriesBy(it) }
-                    )
-                }
-                composable(MenuOption.CURRENCIES.name) {
-                    CurrenciesView(
-                        screenWidth = screenWidth,
-                        table = uiState.currenciesTable,
-                        data = mainViewModel.currenciesViewData(),
-                        onCurrencyClick = {
-                            navController.navigate("CURRENCY/$it")
-                        },
-                        onCountryClick = {
-                            navController.navigate("COUNTRY/$it")
-                        },
-                        sortCallback = { mainViewModel.sortCurrenciesBy(it) }
-                    )
-                }
-                composable(MenuOption.DENOMINATIONS.name) {
-                    Text("DENOMINATIONS")
-                }
-                composable(MenuOption.YEARS.name) {
-                    Text("YEARS")
-                }
-                composable(MenuOption.COLLECTION.name) {
-                    Text("COLLECTION")
-                }
-                composable(MenuOption.LOG_IN.name) {
-                    Text("SIGN IN / SIGN UP")
-                }
-                composable(
-                    "COUNTRY/{id}",
-                    arguments = listOf(navArgument("id") {
-                        type = NavType.IntType
-                    })
-                ) { navBackStackEntry ->
-                    val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                    mainViewModel.updateHistoryTer(id)
-                    val data = mainViewModel.territoryViewData(id)
-                    if (data != null)
-                        TerritoryView(
-                            windowWidth = windowSize.widthSizeClass,
-                            data = data,
-                            isFavourite = userPreferences.favouriteTerritories.contains(id),
-                            onCountryClick = {
-                                navController.navigate("COUNTRY/$it")
-                            },
-                            onAddFavourite = { mainViewModel.updateFavouriteTer(id) }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = defaultRoute,
+                    //modifier = Modifier.padding(innerPadding)
+                ) {
+                    composable(defaultRoute) {
+                        FrontPage(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
                         )
-                }
-                composable(
-                    "CURRENCY/{id}",
-                    arguments = listOf(navArgument("id") {
-                        type = NavType.IntType
-                    })
-                ) { navBackStackEntry ->
-                    val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
-                    mainViewModel.updateHistoryCur(id)
-                    val data = mainViewModel.currencyViewData(id)
-                    if (data != null)
-                        CurrencyView(
-                            data = data,
-                            windowWidth = windowSize.widthSizeClass,
-                            isFavourite = userPreferences.favouriteCurrencies.contains(id),
+                    }
+                    composable(MenuOption.COUNTRIES.name) {
+                        TerritoriesView(
+                            screenWidth = screenWidth,
+                            table = uiState.territoriesTable,
+                            data = mainViewModel.territoriesViewData(),
                             onCountryClick = {
                                 navController.navigate("COUNTRY/$it")
                             },
+                            sortCallback = { mainViewModel.sortTerritoriesBy(it) }
+                        )
+                    }
+                    composable(MenuOption.CURRENCIES.name) {
+                        CurrenciesView(
+                            screenWidth = screenWidth,
+                            table = uiState.currenciesTable,
+                            data = mainViewModel.currenciesViewData(),
                             onCurrencyClick = {
                                 navController.navigate("CURRENCY/$it")
                             },
-                            onAddFavourite = {
-                                mainViewModel.updateFavouriteCur(id)
-                            }
+                            onCountryClick = {
+                                navController.navigate("COUNTRY/$it")
+                            },
+                            sortCallback = { mainViewModel.sortCurrenciesBy(it) }
                         )
+                    }
+                    composable(MenuOption.DENOMINATIONS.name) {
+                        Text("DENOMINATIONS")
+                    }
+                    composable(MenuOption.YEARS.name) {
+                        Text("YEARS")
+                    }
+                    composable(MenuOption.COLLECTION.name) {
+                        Text("COLLECTION")
+                    }
+                    composable(MenuOption.LOG_IN.name) {
+                        Text("SIGN IN / SIGN UP")
+                    }
+                    composable(
+                        "COUNTRY/{id}",
+                        arguments = listOf(navArgument("id") {
+                            type = NavType.IntType
+                        })
+                    ) { navBackStackEntry ->
+                        val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                        mainViewModel.updateHistoryTer(id)
+                        val data = mainViewModel.territoryViewData(id)
+                        if (data != null)
+                            TerritoryView(
+                                windowWidth = windowSize.widthSizeClass,
+                                data = data,
+                                isFavourite = userPreferences.favouriteTerritories.contains(id),
+                                onCountryClick = {
+                                    navController.navigate("COUNTRY/$it")
+                                },
+                                onAddFavourite = { mainViewModel.updateFavouriteTer(id) }
+                            )
+                    }
+                    composable(
+                        "CURRENCY/{id}",
+                        arguments = listOf(navArgument("id") {
+                            type = NavType.IntType
+                        })
+                    ) { navBackStackEntry ->
+                        val id = navBackStackEntry.arguments!!.getInt("id").toUInt()
+                        mainViewModel.updateHistoryCur(id)
+                        val data = mainViewModel.currencyViewData(id)
+                        if (data != null)
+                            CurrencyView(
+                                data = data,
+                                windowWidth = windowSize.widthSizeClass,
+                                isFavourite = userPreferences.favouriteCurrencies.contains(id),
+                                onCountryClick = {
+                                    navController.navigate("COUNTRY/$it")
+                                },
+                                onCurrencyClick = {
+                                    navController.navigate("CURRENCY/$it")
+                                },
+                                onAddFavourite = {
+                                    mainViewModel.updateFavouriteCur(id)
+                                }
+                            )
+                    }
                 }
             }
         }

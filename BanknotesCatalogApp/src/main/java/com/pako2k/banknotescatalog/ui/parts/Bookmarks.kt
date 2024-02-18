@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
+import com.pako2k.banknotescatalog.ui.theme.color_menu_background
 
 
 private const val DRAWER_WIDTH = 280
@@ -53,18 +54,17 @@ fun Bookmarks (
     onClick : (isTerritory : Boolean, id : UInt) -> Unit,
     onContent : @Composable () -> Unit
 ) {
-    val backgroundColor = MaterialTheme.colorScheme.surface
     val contentColor = MaterialTheme.colorScheme.onSurface
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl ) {
         ModalNavigationDrawer(
-            scrimColor = backgroundColor.copy(alpha = 0.5f),
+            scrimColor = Color.White.copy(alpha = 0.8f),
             gesturesEnabled = true,
             drawerState = state,
             modifier = Modifier.padding(drawerPadding),
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = backgroundColor,
+                    drawerContainerColor = color_menu_background,
                     drawerContentColor = contentColor,
                     modifier = Modifier
                         .width(DRAWER_WIDTH.dp)
@@ -163,7 +163,7 @@ fun Bookmarks (
 
 
 @Composable
-fun SubsectionTitle(
+private fun SubsectionTitle(
     text : String,
 ){
     Text(
@@ -179,7 +179,7 @@ fun SubsectionTitle(
 }
 
 @Composable
-fun Item(
+private fun Item(
     id : UInt,
     text : String,
     onClick : (UInt) -> Unit
@@ -202,7 +202,7 @@ fun Item(
 }
 
 @Composable
-fun LastVisitedItem(
+private fun LastVisitedItem(
     id : UInt,
     text : String,
     onClick : (UInt) -> Unit
