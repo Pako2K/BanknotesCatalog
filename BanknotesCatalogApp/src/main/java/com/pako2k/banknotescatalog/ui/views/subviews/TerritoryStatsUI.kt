@@ -2,6 +2,7 @@ package com.pako2k.banknotescatalog.ui.views.subviews
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,6 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
@@ -47,6 +51,7 @@ import com.pako2k.banknotescatalog.ui.theme.color_stats_collection
 import com.pako2k.banknotescatalog.ui.theme.color_stats_issuer
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_even
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_odd
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -122,6 +127,9 @@ private fun StatsTable(
     data : Map<String, TerritoryStats>,
     isLoggedIn : Boolean
 ){
+    val hScrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+
     // Initial box just for the shadow
     Box(
         modifier = Modifier
@@ -130,6 +138,7 @@ private fun StatsTable(
     ) {
         // Inside Box for the overall background
         Box(
+            contentAlignment = Alignment.CenterEnd,
             modifier = Modifier
                 .padding(1.dp)
                 .border(Dp.Hairline, Color.Gray)
@@ -139,13 +148,14 @@ private fun StatsTable(
             Row {
                 // Fixed 1st Column
                 Column(
-                    modifier = Modifier.width(IntrinsicSize.Max)
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
                         .rightBorder(Color.White)
                 ){
                     HeaderTitle("")
                     Row(modifier = Modifier
                         .fillMaxWidth()
-                        .bottomBorder(Color.Black,2f)
+                        .bottomBorder(Color.Black, 2f)
                     ){
                         HeaderSubtitle("")
                     }
@@ -156,10 +166,11 @@ private fun StatsTable(
 
                 // Scrollable Columns
                 Row (
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                    modifier = Modifier.horizontalScroll(hScrollState)
                 ){
                     Column(
-                        modifier = Modifier.width(IntrinsicSize.Max)
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
                             .rightBorder(Color.White)
                     ){
                         HeaderTitle("Existing")
@@ -172,7 +183,8 @@ private fun StatsTable(
                         RowDataTotal(sum, isLoggedIn)
                     }
                     Column(
-                        modifier = Modifier.width(IntrinsicSize.Max)
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
                             .rightBorder(Color.White)
                     ){
                         HeaderTitle("Extinct")
@@ -199,6 +211,19 @@ private fun StatsTable(
                 }
 
             }
+            if ( hScrollState.value < (hScrollState.maxValue - 20))
+                Icon(
+                    painter = painterResource(R.drawable.double_arrow_right_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .alpha(0.8f)
+                        .offset(x = dimensionResource(id = R.dimen.small_padding))
+                        .clickable {
+                            coroutineScope.launch {
+                                hScrollState.scrollTo(hScrollState.maxValue)
+                            }
+                        }
+                )
         }
     }
 }
@@ -216,8 +241,10 @@ private fun HeaderTitle(
         color = getTitleColor(),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = dimensionResource(id = R.dimen.small_padding),
-                vertical = dimensionResource(id = R.dimen.small_padding))
+            .padding(
+                horizontal = dimensionResource(id = R.dimen.small_padding),
+                vertical = dimensionResource(id = R.dimen.small_padding)
+            )
     )
 }
 
@@ -231,7 +258,8 @@ private fun HeaderSubtitle(
         style = getSubTitleStyle(),
         color = getTitleColor().copy(alpha = alpha),
         textAlign = TextAlign.Center,
-        modifier = Modifier.widthIn(min = subColWidth)
+        modifier = Modifier
+            .widthIn(min = subColWidth)
             .padding(bottom = dimensionResource(id = R.dimen.small_padding))
     )
 }
