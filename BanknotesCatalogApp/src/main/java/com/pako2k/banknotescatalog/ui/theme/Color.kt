@@ -68,7 +68,7 @@ val color_table_header_top = Color(0xFF6E3737)
 val color_table_header_bottom = Color(0xFF964141)
 val color_table_header_text = Color(0xFFFFFFFF)
 
-val color_table_row_odd = Color(0xFFF0F4F4)
+val color_table_row_odd = Color(0xFFF0F3F3)
 val color_table_row_even = Color(0xFFF7FBFB)
 
 val color_table_link_prim = Color(0xFF00391C)
@@ -80,3 +80,6 @@ val color_territory_badge = Color(0xFF00696A)
 val color_is_favourite = Color(0xFFFFD700)
 
 val color_menu_background = Color(0xFFF9FBFB)
+
+val color_stats_issuer = Color(0xFF6E0707)
+val color_stats_collection = Color(0xFF00491C)

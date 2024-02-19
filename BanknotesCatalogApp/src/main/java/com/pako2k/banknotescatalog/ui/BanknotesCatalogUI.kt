@@ -3,23 +3,31 @@ package com.pako2k.banknotescatalog.ui
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -42,6 +50,7 @@ import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
+import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
 
 
@@ -140,13 +149,15 @@ fun MainScreen(
         HeaderMenu(
             state = headerMenuState,
             drawerPadding = innerPadding,
-            {
+            onClickFilter = {
                 scope.launch { headerMenuState.apply { close() } }
             },
-            {
+            onClickStats = {
                 scope.launch { headerMenuState.apply { close() } }
+                if (mainMenuOption == MenuOption.COUNTRIES)
+                    mainViewModel.showTerritoryStats(true)
             },
-            {
+            onClickSettings = {
                 scope.launch { headerMenuState.apply { close() } }
             },
         ) {
@@ -182,11 +193,10 @@ fun MainScreen(
                 },
                 drawerPadding = PaddingValues(0.dp)//innerPadding
             ) {
-
+                val padding = dimensionResource(id = R.dimen.small_padding)
                 NavHost(
                     navController = navController,
                     startDestination = defaultRoute,
-                    //modifier = Modifier.padding(innerPadding)
                 ) {
                     composable(defaultRoute) {
                         FrontPage(
@@ -196,29 +206,54 @@ fun MainScreen(
                         )
                     }
                     composable(MenuOption.COUNTRIES.name) {
-                        TerritoriesView(
-                            screenWidth = screenWidth,
-                            table = uiState.territoriesTable,
-                            data = mainViewModel.territoriesViewData(),
-                            onCountryClick = {
-                                navController.navigate("COUNTRY/$it")
-                            },
-                            sortCallback = { mainViewModel.sortTerritoriesBy(it) }
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally, 
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(padding)
+                        ) {
+                            if (uiState.showTerritoryStats) {
+                                TerritoryStatsUI(
+                                    data = mainViewModel.getTerritoryStats(),
+                                    isLoggedIn = uiState.userLoggedIn,
+                                    onClose = {
+                                        mainViewModel.showTerritoryStats(false)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            if (!uiState.showTerritoryStats || windowSize.heightSizeClass != WindowHeightSizeClass.Compact)
+                                TerritoriesView(
+                                    width = screenWidth - 2 * padding,
+                                    table = uiState.territoriesTable,
+                                    data = mainViewModel.territoriesViewData(),
+                                    onCountryClick = {
+                                        navController.navigate("COUNTRY/$it")
+                                    },
+                                    sortCallback = { mainViewModel.sortTerritoriesBy(it) }
+                                )
+                        }
                     }
                     composable(MenuOption.CURRENCIES.name) {
-                        CurrenciesView(
-                            screenWidth = screenWidth,
-                            table = uiState.currenciesTable,
-                            data = mainViewModel.currenciesViewData(),
-                            onCurrencyClick = {
-                                navController.navigate("CURRENCY/$it")
-                            },
-                            onCountryClick = {
-                                navController.navigate("COUNTRY/$it")
-                            },
-                            sortCallback = { mainViewModel.sortCurrenciesBy(it) }
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(padding)
+                        ) {
+                            CurrenciesView(
+                                width = screenWidth - 2 * padding,
+                                table = uiState.currenciesTable,
+                                data = mainViewModel.currenciesViewData(),
+                                onCurrencyClick = {
+                                    navController.navigate("CURRENCY/$it")
+                                },
+                                onCountryClick = {
+                                    navController.navigate("COUNTRY/$it")
+                                },
+                                sortCallback = { mainViewModel.sortCurrenciesBy(it) }
+                            )
+                        }
                     }
                     composable(MenuOption.DENOMINATIONS.name) {
                         Text("DENOMINATIONS")

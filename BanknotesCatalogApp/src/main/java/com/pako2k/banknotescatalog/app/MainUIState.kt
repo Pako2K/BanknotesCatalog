@@ -44,4 +44,6 @@ data class MainUiState (
         sortDirection = SortDirection.ASC
     ),
 
+    val showTerritoryStats: Boolean = false,
+
 )

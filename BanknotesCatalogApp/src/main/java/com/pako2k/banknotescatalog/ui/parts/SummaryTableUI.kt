@@ -30,8 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -51,6 +49,8 @@ import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.app.SummaryTableColumn
 import com.pako2k.banknotescatalog.data.SortDirection
+import com.pako2k.banknotescatalog.ui.common.leftBorder
+import com.pako2k.banknotescatalog.ui.common.rightBorder
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_bottom
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_text
@@ -64,14 +64,12 @@ import kotlinx.coroutines.launch
 
 
 // Non Composable Constants
-private const val BORDER_ALPHA = 0.8f
 private const val INACTIVE_SORT_ICON_ALPHA = 0.3f
 private const val DISABLED_HEADER_BUTTON_ALPHA = 0.5f
 
 
 @Composable
 fun SummaryTableUI(
-    modifier: Modifier = Modifier,
     table : SummaryTable,
     fixedColumns : Int,
     isLogged : Boolean = false,
@@ -94,10 +92,8 @@ fun SummaryTableUI(
 
     Surface(
         shadowElevation = dimensionResource(id = R.dimen.shadowElevation),
-        modifier = modifier
     ) {
         Box(
-            //modifier = Modifier.height(IntrinsicSize.Min)
             contentAlignment = Alignment.CenterEnd
         ){
             Column{
@@ -522,32 +518,6 @@ fun ImageDataCell(
             )
     }
 }
-
-
-
-private fun Modifier.leftBorder(color : Color, strokeWidth : Float = 1f) =
-    this.drawBehind {
-        val y = size.height - strokeWidth / 2
-        drawLine(
-            color,
-            Offset(0f, 0f),
-            Offset(0f, y),
-            strokeWidth,
-            alpha = BORDER_ALPHA
-        )
-    }
-
-private fun Modifier.rightBorder(color : Color, strokeWidth : Float = 1f) =
-    this.drawBehind {
-        val y = size.height - strokeWidth / 2
-        drawLine(
-            color,
-            Offset(size.width, 0f),
-            Offset(size.width, y),
-            strokeWidth,
-            alpha = BORDER_ALPHA
-        )
-    }
 
 
 

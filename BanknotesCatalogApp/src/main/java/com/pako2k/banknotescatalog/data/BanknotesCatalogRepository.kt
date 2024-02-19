@@ -62,12 +62,15 @@ class BanknotesCatalogRepository private constructor(
     var territoryTypes : Map<UInt, TerritoryType> = mapOf()
         private set
 
-    // Value set when territories list change
+    // Value set when territories list is sorted
     var territories : List<Territory> = listOf()
         private set
 
-    // Value set when currencies list change
-     var currencies : List<Currency> = listOf()
+    // Value set when currencies list is sorted
+    var currencies : List<Currency> = listOf()
+        private set
+
+    var territoryStats : Map<String,TerritoryStats> = mapOf()
         private set
 
     companion object {
@@ -102,6 +105,28 @@ class BanknotesCatalogRepository private constructor(
         currencies = banknotesNetworkDataSource.getCurrencies()
     }
 
+    fun setStats(){
+        val tmp = mutableMapOf<String, TerritoryStats>()
+        territoryTypes.forEach { type ->
+            val terList = territories.filter { it.territoryType.id == type.key }
+            var extinctCount = 0
+            var currentCount = 0
+            var extinctIssuerCount = 0
+            var currentIssuerCount = 0
+            terList.forEach{ter ->
+                val isIssuer = currencies.find { cur -> cur.ownedBy.find { owner -> owner.territory.id == ter.id } != null } != null
+                if (ter.end == null) {
+                    currentCount++
+                    if (isIssuer) currentIssuerCount++
+                } else {
+                    extinctCount++
+                    if (isIssuer) extinctIssuerCount++
+                }
+            }
+            tmp[type.value.name] = TerritoryStats(current = TerritoryStats.Data(currentCount,currentIssuerCount), extinct = TerritoryStats.Data(extinctCount,extinctIssuerCount))
+        }
+        territoryStats = tmp
+    }
 
     fun sortTerritories(sortBy : TerritorySortableField, sortingDir : SortDirection){
         territories = when (sortBy){

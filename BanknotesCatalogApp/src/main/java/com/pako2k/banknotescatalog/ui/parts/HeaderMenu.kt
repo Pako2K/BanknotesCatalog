@@ -129,7 +129,7 @@ private const val PREVIEW_HEIGHT = 900
 
 @Preview (widthDp = PREVIEW_WIDTH, heightDp = PREVIEW_HEIGHT)
 @Composable
-fun HeaderMenuPreview() {
+private fun HeaderMenuPreview() {
     BanknotesCatalogTheme {
         HeaderMenu (
             state = DrawerState(DrawerValue.Open),

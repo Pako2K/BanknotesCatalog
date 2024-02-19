@@ -13,6 +13,7 @@ import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
+import com.pako2k.banknotescatalog.data.TerritoryStats
 import com.pako2k.banknotescatalog.data.TerritoryTypes
 import com.pako2k.banknotescatalog.data.UserPreferences
 import com.pako2k.banknotescatalog.data.UserPreferencesRepository
@@ -112,6 +113,10 @@ class MainViewModel private constructor(
         return cur
     }
 
+    fun getTerritoryStats() : Map<String, TerritoryStats> {
+        return repository.territoryStats
+    }
+
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
         val Factory : ViewModelProvider.Factory = viewModelFactory {
@@ -131,10 +136,8 @@ class MainViewModel private constructor(
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT MainViewModel")
 
-
         territoriesViewData = listOf()
         currenciesViewData = listOf()
-
 
         // Initialization in separate coroutines
         val job1 = viewModelScope.async {
@@ -196,14 +199,20 @@ class MainViewModel private constructor(
 
         viewModelScope.launch{
             val results = awaitAll(job1, job2, job3)
-            val finalResult = if (results.contains(ComponentState.FAILED)) ComponentState.FAILED
-            else ComponentState.DONE
+            val finalResult =
+                if (results.contains(ComponentState.FAILED))
+                    ComponentState.FAILED
+                else {
+                    repository.setStats()
+                    ComponentState.DONE
+                }
 
-            _mainUiInitializationState.update {currentState ->
-                currentState.copy(
-                    state = finalResult
-                )
-            }
+            if (finalResult == ComponentState.DONE)
+                _mainUiInitializationState.update {currentState ->
+                    currentState.copy(
+                        state = finalResult
+                    )
+                }
         }
 
         Log.d(ctx.getString(R.string.app_log_tag), "End INIT MainViewModel")
@@ -301,4 +310,11 @@ class MainViewModel private constructor(
         }
     }
 
+    fun showTerritoryStats(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showTerritoryStats = visible
+            )
+        }
+    }
 }
