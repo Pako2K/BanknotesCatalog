@@ -2,6 +2,7 @@ package com.pako2k.banknotescatalog.data
 
 import android.content.Context
 import androidx.compose.ui.graphics.ImageBitmap
+import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import com.pako2k.banknotescatalog.network.BanknotesNetworkDataSource
@@ -29,6 +30,13 @@ sealed class TerritorySortableField : SortableField()
 object TerritoryFieldName : TerritorySortableField()
 object TerritoryFieldStart : TerritorySortableField()
 object TerritoryFieldEnd : TerritorySortableField()
+object TerritoryFieldCurrencies : TerritorySortableField()
+object TerritoryFieldIssues : TerritorySortableField()
+object TerritoryFieldDenominations : TerritorySortableField()
+object TerritoryFieldNotes : TerritorySortableField()
+object TerritoryFieldVariants : TerritorySortableField()
+object TerritoryFieldPrice : TerritorySortableField()
+
 
 
 
@@ -66,11 +74,17 @@ class BanknotesCatalogRepository private constructor(
     var territories : List<Territory> = listOf()
         private set
 
+    var territoryCatStats : List<TerritoryStats> = listOf()
+        private set
+
+    var territoryColStats : List<TerritoryStats> = listOf()
+        private set
+
     // Value set when currencies list is sorted
     var currencies : List<Currency> = listOf()
         private set
 
-    var territoryStats : Map<String,TerritoryStats> = mapOf()
+    var territorySummaryStats : Map<String,TerritorySummaryStats> = mapOf()
         private set
 
     companion object {
@@ -100,15 +114,19 @@ class BanknotesCatalogRepository private constructor(
             continents[ter.continent.id]  != null
         }
     }
+    suspend fun fetchTerritoryStats() {
+        territoryCatStats = banknotesNetworkDataSource.getTerritoryStats()
+    }
 
     suspend fun fetchCurrencies() {
         currencies = banknotesNetworkDataSource.getCurrencies()
     }
 
-    fun setStats(){
-        val tmp = mutableMapOf<String, TerritoryStats>()
+    fun setStats(continentId : UInt? = null){
+        val tmp = mutableMapOf<String, TerritorySummaryStats>()
+        val territoriesByCont = if (continentId!= null) territories.filter { it.continent.id == continentId } else territories
         territoryTypes.forEach { type ->
-            val terList = territories.filter { it.territoryType.id == type.key }
+            val terList = territoriesByCont.filter { it.territoryType.id == type.key }
             var extinctCount = 0
             var currentCount = 0
             var extinctIssuerCount = 0
@@ -123,16 +141,92 @@ class BanknotesCatalogRepository private constructor(
                     if (isIssuer) extinctIssuerCount++
                 }
             }
-            tmp[type.value.name] = TerritoryStats(current = TerritoryStats.Data(currentCount,currentIssuerCount), extinct = TerritoryStats.Data(extinctCount,extinctIssuerCount))
+            tmp[type.value.name] = TerritorySummaryStats(current = TerritorySummaryStats.Data(currentCount,currentIssuerCount), extinct = TerritorySummaryStats.Data(extinctCount,extinctIssuerCount))
         }
-        territoryStats = tmp
+        territorySummaryStats = tmp
     }
 
-    fun sortTerritories(sortBy : TerritorySortableField, sortingDir : SortDirection){
+    fun sortTerritories(sortBy : TerritorySortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection){
         territories = when (sortBy){
             TerritoryFieldName -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.name  } else territories.sortedBy { it.name  }
             TerritoryFieldStart -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.start } else territories.sortedBy { it.start }
             TerritoryFieldEnd -> if (sortingDir == SortDirection.DESC) territories.sortedByDescending { it.end } else territories.sortedBy { it.end }
+            TerritoryFieldCurrencies -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryCatStats.find { it2 -> it2.id == it.id }?.numCurrencies?:0 }
+                    else
+                        territories.sortedBy { territoryCatStats.find { it2 -> it2.id == it.id }?.numCurrencies?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.numCurrencies?:0 }
+                    else
+                        territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.numCurrencies?:0 }
+                }
+            }
+            TerritoryFieldIssues -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryCatStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                    else
+                        territories.sortedBy { territoryCatStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                    else
+                        territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                }
+            }
+            TerritoryFieldDenominations -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryCatStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                    else
+                        territories.sortedBy { territoryCatStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                    else
+                        territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                }
+            }
+            TerritoryFieldNotes -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryCatStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                    else
+                        territories.sortedBy { territoryCatStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                    else
+                        territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                }
+            }
+            TerritoryFieldVariants -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryCatStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                    else
+                        territories.sortedBy { territoryCatStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                    else
+                        territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                }
+            }
+            TerritoryFieldPrice -> {
+                if (sortingDir == SortDirection.DESC)
+                    territories.sortedByDescending { territoryColStats.find { it2 -> it2.id == it.id }?.price?:0f }
+                else
+                    territories.sortedBy { territoryColStats.find { it2 -> it2.id == it.id }?.price?:0f }
+            }
         }
     }
 
@@ -213,8 +307,8 @@ class BanknotesCatalogRepository private constructor(
 
      */
 
-
     private suspend fun fetchFlags() {
         flags = flagsLocalDataSource.getFlags()
     }
+
 }

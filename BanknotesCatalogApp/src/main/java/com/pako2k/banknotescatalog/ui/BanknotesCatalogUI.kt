@@ -1,6 +1,7 @@
 package com.pako2k.banknotescatalog.ui
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
@@ -209,6 +211,7 @@ fun MainScreen(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally, 
                             modifier = Modifier
+                                .background(color = MaterialTheme.colorScheme.surface)
                                 .fillMaxWidth()
                                 .padding(padding)
                         ) {
@@ -230,7 +233,7 @@ fun MainScreen(
                                     onCountryClick = {
                                         navController.navigate("COUNTRY/$it")
                                     },
-                                    sortCallback = { mainViewModel.sortTerritoriesBy(it) }
+                                    sortCallback = { field, statsCol -> mainViewModel.sortTerritoriesBy(field, statsCol) }
                                 )
                         }
                     }
@@ -251,7 +254,7 @@ fun MainScreen(
                                 onCountryClick = {
                                     navController.navigate("COUNTRY/$it")
                                 },
-                                sortCallback = { mainViewModel.sortCurrenciesBy(it) }
+                                sortCallback = { field, statsCol -> mainViewModel.sortCurrenciesBy(field, statsCol) }
                             )
                         }
                     }

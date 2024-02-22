@@ -4,6 +4,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.Territory
+import com.pako2k.banknotescatalog.data.TerritoryStats
 import com.pako2k.banknotescatalog.data.TerritoryType
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,6 +23,9 @@ interface BanknotesAPIService{
 
     @GET("territory")
     suspend fun getTerritories() : List<Territory>
+
+    @GET("territory/stats")
+    suspend fun getTerritoryStats() : List<TerritoryStats>
 
     @GET("currency")
     suspend fun getCurrencies() : List<Currency>
@@ -53,5 +57,6 @@ class BanknotesAPIClient (
     suspend fun getContinents() = retrofitService.getContinents()
     suspend fun getTerritoryTypes()  = retrofitService.getTerritoryTypes()
     suspend fun getTerritories() = retrofitService.getTerritories()
+    suspend fun getTerritoryStats() = retrofitService.getTerritoryStats()
     suspend fun getCurrencies() = retrofitService.getCurrencies()
 }

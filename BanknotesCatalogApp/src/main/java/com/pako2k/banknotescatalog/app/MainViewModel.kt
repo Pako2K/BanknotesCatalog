@@ -13,10 +13,11 @@ import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
-import com.pako2k.banknotescatalog.data.TerritoryStats
+import com.pako2k.banknotescatalog.data.TerritorySummaryStats
 import com.pako2k.banknotescatalog.data.TerritoryTypes
 import com.pako2k.banknotescatalog.data.UserPreferences
 import com.pako2k.banknotescatalog.data.UserPreferencesRepository
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,13 +70,25 @@ class MainViewModel private constructor(
             val terTypSuffix =
                 if( ter.territoryType.name == TerritoryTypes.IND.value) ""
                 else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
+            val stats = repository.territoryCatStats.find { it.id == ter.id }
             uiData.add(
                 listOf(
                     repository.flags[ter.flagName],
                     ter.iso3?:"",
                     Pair(ter.id, ter.name + terTypSuffix),
                     ter.start.toString(),
-                    ter.end?.toString()?:""
+                    ter.end?.toString()?:"",
+                    stats?.numCurrencies.toString(),
+                    "-",
+                    stats?.numSeries.toString(),
+                    "-",
+                    stats?.numDenominations.toString(),
+                    "-",
+                    stats?.numNotes.toString(),
+                    "-",
+                    stats?.numVariants.toString(),
+                    "-",
+                    "-"
                 )
             )
         }
@@ -113,8 +126,8 @@ class MainViewModel private constructor(
         return cur
     }
 
-    fun getTerritoryStats() : Map<String, TerritoryStats> {
-        return repository.territoryStats
+    fun getTerritoryStats() : Map<String, TerritorySummaryStats> {
+        return repository.territorySummaryStats
     }
 
     // ViewModel can only be created by ViewModelProvider.Factory
@@ -140,7 +153,9 @@ class MainViewModel private constructor(
         currenciesViewData = listOf()
 
         // Initialization in separate coroutines
-        val job1 = viewModelScope.async {
+        val jobs = mutableListOf<Deferred<ComponentState>>()
+
+        viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getContinents")
 
             // Get Continents and territories
@@ -158,8 +173,9 @@ class MainViewModel private constructor(
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getContinents")
 
             return@async result
-        }
-        val job2 = viewModelScope.async {
+        }.let { jobs.add(it) }
+
+        viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritories")
 
             // Get Territories
@@ -176,9 +192,26 @@ class MainViewModel private constructor(
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with $result")
             return@async result
-        }
+        }.let { jobs.add(it) }
 
-        val job3 = viewModelScope.async {
+        viewModelScope.async {
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritories")
+
+            // Get Territory Stats
+            val result : ComponentState = try {
+                repository.fetchTerritoryStats()
+                ComponentState.DONE
+            }
+            catch (exc : Exception){
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                ComponentState.FAILED
+            }
+
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with $result")
+            return@async result
+        }.let { jobs.add(it) }
+
+        viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getCurrencies")
 
             // Get Currencies
@@ -195,10 +228,10 @@ class MainViewModel private constructor(
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies with $result")
             return@async result
-        }
+        }.let { jobs.add(it) }
 
         viewModelScope.launch{
-            val results = awaitAll(job1, job2, job3)
+            val results = jobs.awaitAll()
             val finalResult =
                 if (results.contains(ComponentState.FAILED))
                     ComponentState.FAILED
@@ -269,6 +302,8 @@ class MainViewModel private constructor(
             currenciesViewData = repository.currencies
         }
 
+        repository.setStats(newSelection)
+
         _mainUiState.update { currentState ->
             currentState.copy(
                 selectedContinent = newSelection
@@ -276,13 +311,13 @@ class MainViewModel private constructor(
         }
     }
 
-    fun sortTerritoriesBy(sortBy : TerritorySortableField) {
+    fun sortTerritoriesBy(sortBy : TerritorySortableField, statsCol : StatsSubColumn?) {
 
-        _mainUiState.value.territoriesTable.sortBy( _mainUiState.value.territoriesTable.getCol(sortBy)?:2)
+        _mainUiState.value.territoriesTable.sortBy( _mainUiState.value.territoriesTable.getCol(sortBy)?:2, statsCol)
 
         val sortedColumn = _mainUiState.value.territoriesTable.sortedBy
         val newSortingDir = _mainUiState.value.territoriesTable.columns[sortedColumn].sortedDirection!!
-        repository.sortTerritories(sortBy, newSortingDir )
+        repository.sortTerritories(sortBy, statsCol, newSortingDir )
 
 
         territoriesViewData = _mainUiState.value.selectedContinent?.let {repository.getTerritories(it)}?:repository.territories
@@ -294,8 +329,8 @@ class MainViewModel private constructor(
         }
     }
 
-    fun sortCurrenciesBy(sortBy : CurrencySortableField) {
-        _mainUiState.value.currenciesTable.sortBy(_mainUiState.value.currenciesTable.getCol(sortBy)?:1)
+    fun sortCurrenciesBy(sortBy : CurrencySortableField, statsCol : StatsSubColumn?) {
+        _mainUiState.value.currenciesTable.sortBy(_mainUiState.value.currenciesTable.getCol(sortBy)?:1, statsCol)
         val sortedColumn = _mainUiState.value.currenciesTable.sortedBy
         val newSortingDir = _mainUiState.value.currenciesTable.columns[sortedColumn].sortedDirection!!
 

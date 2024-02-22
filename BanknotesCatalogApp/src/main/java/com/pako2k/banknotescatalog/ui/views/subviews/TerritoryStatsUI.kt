@@ -42,7 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.data.TerritoryStats
+import com.pako2k.banknotescatalog.data.TerritorySummaryStats
 import com.pako2k.banknotescatalog.data.plus
 import com.pako2k.banknotescatalog.ui.common.bottomBorder
 import com.pako2k.banknotescatalog.ui.common.rightBorder
@@ -70,7 +70,7 @@ private val subColWidth = 44.dp
 
 @Composable
 fun TerritoryStatsUI (
-    data : Map<String, TerritoryStats>,
+    data : Map<String, TerritorySummaryStats>,
     isLoggedIn : Boolean,
     onClose : () -> Unit
 ){
@@ -124,7 +124,7 @@ private fun CardTitle(
 
 @Composable
 private fun StatsTable(
-    data : Map<String, TerritoryStats>,
+    data : Map<String, TerritorySummaryStats>,
     isLoggedIn : Boolean
 ){
     val hScrollState = rememberScrollState()
@@ -175,7 +175,7 @@ private fun StatsTable(
                     ){
                         HeaderTitle("Existing")
                         SubtitlesRow(isLoggedIn)
-                        var sum = TerritoryStats.Data(0,0)
+                        var sum = TerritorySummaryStats.Data(0,0)
                         data.onEachIndexed{ index, type ->
                             RowData(index, type.value.current, isLoggedIn)
                             sum += type.value.current
@@ -189,7 +189,7 @@ private fun StatsTable(
                     ){
                         HeaderTitle("Extinct")
                         SubtitlesRow(isLoggedIn)
-                        var sum = TerritoryStats.Data(0,0)
+                        var sum = TerritorySummaryStats.Data(0,0)
                         data.onEachIndexed{ index, type ->
                             RowData(index, type.value.extinct, isLoggedIn)
                             sum += type.value.extinct
@@ -201,7 +201,7 @@ private fun StatsTable(
                     ){
                         HeaderTitle("Total")
                         SubtitlesRow(isLoggedIn)
-                        var sum = TerritoryStats.Data(0,0)
+                        var sum = TerritorySummaryStats.Data(0,0)
                         data.onEachIndexed{ index, type ->
                             RowData(index, type.value.total,isLoggedIn)
                             sum += type.value.total
@@ -299,7 +299,7 @@ private fun RowTitles(
 @Composable
 private fun RowData(
     rowIndex : Int,
-    data : TerritoryStats.Data,
+    data : TerritorySummaryStats.Data,
     isLoggedIn: Boolean
 ){
     Row (
@@ -333,7 +333,7 @@ private fun TextData(
 
 @Composable
 private fun RowDataTotal(
-    data : TerritoryStats.Data,
+    data : TerritorySummaryStats.Data,
     isLoggedIn: Boolean
 ){
     Row(
@@ -367,20 +367,20 @@ private fun TextDataTotal(
 private const val PREVIEW_WIDTH = 380
 private const val PREVIEW_HEIGHT = 800
 
-private val testData1 = TerritoryStats(
-    current = TerritoryStats.Data(
+private val testData1 = TerritorySummaryStats(
+    current = TerritorySummaryStats.Data(
         total = 122, issuer = 111, collection = 12
     ),
-    extinct = TerritoryStats.Data(
+    extinct = TerritorySummaryStats.Data(
         total = 22, issuer = 11, collection = 1
     )
 )
 
-private val testData2 = TerritoryStats(
-    current = TerritoryStats.Data(
+private val testData2 = TerritorySummaryStats(
+    current = TerritorySummaryStats.Data(
         total = 22, issuer = 11, collection = 1
     ),
-    extinct = TerritoryStats.Data(
+    extinct = TerritorySummaryStats.Data(
         total = 22, issuer = 11, collection = 1
     )
 )

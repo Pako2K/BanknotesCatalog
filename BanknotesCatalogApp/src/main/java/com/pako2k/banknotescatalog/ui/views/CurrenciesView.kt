@@ -9,12 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import com.pako2k.banknotescatalog.R
+import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.ui.parts.SummaryTableUI
-
-
-private const val MIN_FIXED_COLS = 2
 
 
 @Composable
@@ -22,21 +20,19 @@ fun CurrenciesView(
     width: Dp,
     table : SummaryTable,
     data : List<List<Any?>>,
-    sortCallback: (sortBy: CurrencySortableField)->Unit,
+    sortCallback: (sortBy: CurrencySortableField, statCol : StatsSubColumn?)->Unit,
     onCurrencyClick: (currencyID: UInt)->Unit,
     onCountryClick: (territoryID: UInt)->Unit
 ) {
     Log.d(stringResource(id = R.string.app_log_tag), "Start Currencies")
 
-    val totalWidth = (table.columns.sumOf { it.width.value.toDouble() }).toFloat()
-    val fixedColumns = if (totalWidth > width.value) MIN_FIXED_COLS else table.columns.size
     Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.fillMaxWidth()) {
         SummaryTableUI(
             table = table,
-            fixedColumns = fixedColumns,
+            availableWidth = width,
             data = data,
-            onHeaderClick = {
-                sortCallback(table.columns[it].linkedField as CurrencySortableField)
+            onHeaderClick = { colId, statsCol ->
+                sortCallback(table.columns[colId].linkedField as CurrencySortableField, statsCol)
             },
             onDataClick = { colId, dataId ->
                 if (colId == 1)

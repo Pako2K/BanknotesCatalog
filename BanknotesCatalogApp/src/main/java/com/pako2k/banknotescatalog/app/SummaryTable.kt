@@ -1,6 +1,6 @@
 package com.pako2k.banknotescatalog.app
 
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.Dp
 import com.pako2k.banknotescatalog.data.SortDirection
 import com.pako2k.banknotescatalog.data.SortableField
@@ -12,14 +12,14 @@ enum class StatsSubColumn (val title : String){
 }
 
 data class SummaryTableColumn(
-    val title : String,
-    val align : Alignment = Alignment.Center,
-    val width : Dp,
-    val isImage : Boolean = false,
-    val isStats : Boolean = false,
-    val isClickable : Boolean = false,
-    val isSortable : Boolean  = false,
-    val linkedField : SortableField? = null
+    val title: String,
+    val align: Arrangement.Horizontal = Arrangement.Center,
+    val width: Dp,
+    val isImage: Boolean = false,
+    val isStats: Boolean = false,
+    val isClickable: Boolean = false,
+    val isSortable: Boolean  = false,
+    val linkedField: SortableField? = null
 ){
     var sortedDirection : SortDirection? = null
     var sortedStats : StatsSubColumn? = null
@@ -29,7 +29,8 @@ data class SummaryTableColumn(
 class SummaryTable(
     val columns : List<SummaryTableColumn>,
     sortedBy : Int,
-    sortDirection : SortDirection
+    sortDirection : SortDirection,
+    val minFixedColumns : Int
 ){
     //    private val columnsMap : Map<Int,SummaryTableColumnClass>
     var sortedBy : Int = sortedBy
@@ -39,7 +40,7 @@ class SummaryTable(
         columns[sortedBy].sortedDirection = sortDirection
     }
 
-    fun sortBy(colIndex : Int, statsCol : StatsSubColumn? = null){
+    fun sortBy(colIndex : Int, statsCol : StatsSubColumn?){
         val col = columns[colIndex]
         if (col.isSortable) {
             if (!col.isStats ) {
@@ -61,14 +62,14 @@ class SummaryTable(
                         else SortDirection.ASC
                     else{
                         col.sortedStats = statsCol
-                        col.sortedDirection = SortDirection.ASC
+                        col.sortedDirection = SortDirection.DESC
                     }
                 }
                 else {
                     columns[sortedBy].sortedDirection = null
                     columns[sortedBy].sortedStats = null
                     sortedBy = colIndex
-                    col.sortedDirection = SortDirection.ASC
+                    col.sortedDirection = SortDirection.DESC
                     col.sortedStats = statsCol
                 }
             }

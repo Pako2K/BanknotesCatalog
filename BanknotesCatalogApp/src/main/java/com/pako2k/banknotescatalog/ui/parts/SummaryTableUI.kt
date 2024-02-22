@@ -2,38 +2,39 @@ package com.pako2k.banknotescatalog.ui.parts
 
 import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
+import androidx.annotation.ColorRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
@@ -42,15 +43,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.app.SummaryTableColumn
 import com.pako2k.banknotescatalog.data.SortDirection
-import com.pako2k.banknotescatalog.ui.common.leftBorder
-import com.pako2k.banknotescatalog.ui.common.rightBorder
+import com.pako2k.banknotescatalog.data.TerritoryFieldEnd
+import com.pako2k.banknotescatalog.data.TerritoryFieldName
+import com.pako2k.banknotescatalog.data.TerritoryFieldStart
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_bottom
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_text
@@ -60,77 +62,71 @@ import com.pako2k.banknotescatalog.ui.theme.color_table_link_sec
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_even
 import com.pako2k.banknotescatalog.ui.theme.color_table_row_odd
 import com.pako2k.banknotescatalog.ui.theme.typographySans
-import kotlinx.coroutines.launch
+
 
 
 // Non Composable Constants
 private const val INACTIVE_SORT_ICON_ALPHA = 0.3f
 private const val DISABLED_HEADER_BUTTON_ALPHA = 0.5f
+private const val COMPACT_WIDTH = 440
 
 
 @Composable
 fun SummaryTableUI(
     table : SummaryTable,
-    fixedColumns : Int,
+    availableWidth : Dp,
     isLogged : Boolean = false,
     data : List<List<Any?>>,
-    onHeaderClick: (Int) -> Unit,
+    onHeaderClick: (Int, StatsSubColumn?) -> Unit,
     onDataClick: (colIndex: Int, dataId : UInt) -> Unit
 ) {
     val hScrollState = rememberScrollState()
     val columns = table.columns
 
-    val fixedColumnsList =
-        if (fixedColumns < columns.size) columns.subList(0, fixedColumns)
-        else columns
+    val totalWidth = (columns.sumOf { if(it.isStats) 2 * it.width.value.toDouble() else it.width.value.toDouble() }).toFloat()
 
-    val scrollColumnsList =
-        if (fixedColumns < columns.size) columns.drop(fixedColumns)
-        else null
+    val fixedColumnsList : List<SummaryTableColumn>
+    val scrollColumnsList : List<SummaryTableColumn>?
+    if (totalWidth > availableWidth.value){
+        val fixedColumns = table.minFixedColumns
+        fixedColumnsList = columns.subList(0, fixedColumns)
+        scrollColumnsList = columns.drop(fixedColumns)
+    } else {
+        fixedColumnsList = columns
+        scrollColumnsList = null
+    }
 
-    val coroutineScope = rememberCoroutineScope()
+    val isCompact = availableWidth < COMPACT_WIDTH.dp
 
-    Surface(
-        shadowElevation = dimensionResource(id = R.dimen.shadowElevation),
-    ) {
-        Box(
-            contentAlignment = Alignment.CenterEnd
-        ){
-            Column{
-                // Header
-                SummaryTableHeader(
-                    fixedColumns = fixedColumnsList,
-                    scrollableColumns = scrollColumnsList,
-                    isLogged = isLogged,
-                    horizontalScroll = hScrollState,
-                    onClick = onHeaderClick
-                )
+    // Box used to draw the double arrow scroll button
+    Box(
+        contentAlignment = Alignment.CenterEnd
+    ){
+        Column{
+            // Header
+            SummaryTableHeader(
+                fixedColumns = fixedColumnsList,
+                scrollableColumns = scrollColumnsList,
+                isLogged = isLogged,
+                isCompactWidth = isCompact,
+                horizontalScroll = hScrollState,
+                onClick = onHeaderClick
+            )
 
-                // Rows
-                SummaryTableData(
-                    fixedColumns = fixedColumnsList,
-                    scrollableColumns = scrollColumnsList,
-                    data = data,
-                    horizontalScroll = hScrollState,
-                    onClick = onDataClick
-                )
-            }
-
-            if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
-                Icon(
-                    painter = painterResource(R.drawable.double_arrow_right_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .alpha(0.8f)
-                        .offset(x = dimensionResource(id = R.dimen.small_padding))
-                        .clickable {
-                            coroutineScope.launch{
-                                hScrollState.scrollTo(hScrollState.maxValue)
-                            }
-                        }
-                )
+            // Rows
+            SummaryTableData(
+                fixedColumns = fixedColumnsList,
+                scrollableColumns = scrollColumnsList,
+                data = data,
+                isCompactWidth = isCompact,
+                horizontalScroll = hScrollState,
+                onClick = onDataClick
+            )
         }
 
+        // Scroll button
+        if (scrollColumnsList != null && hScrollState.value < (hScrollState.maxValue - 40))
+            HScrollButton(hScrollState)
     }
 }
 
@@ -139,8 +135,9 @@ fun SummaryTableHeader(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     isLogged : Boolean = false,
+    isCompactWidth : Boolean,
     horizontalScroll : ScrollState,
-    onClick: (Int) -> Unit
+    onClick: (Int, StatsSubColumn?) -> Unit
 ){
     Row (
         verticalAlignment = Alignment.CenterVertically,
@@ -151,24 +148,30 @@ fun SummaryTableHeader(
                     1f to color_table_header_bottom
                 )
             )
+            .height(IntrinsicSize.Min)
     ) {
         // Fixed Columns
         fixedColumns.forEachIndexed{ index, col ->
-            HeaderColumn(index, col, isLogged, onClick = onClick)
+            if (!isCompactWidth || col.title.isNotEmpty())
+                HeaderColumn(index, col, isLogged, onClick = onClick)
         }
 
         // Scrollable Columns
-        if (scrollableColumns != null)
+        if (scrollableColumns != null) {
+            BorderDivider(R.color.header_border_color)
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .leftBorder(colorResource(id = R.color.header_border_color))
                     .horizontalScroll(horizontalScroll)
             ) {
-                scrollableColumns.forEachIndexed{ index, col ->
-                    HeaderColumn(fixedColumns.size+index, col, isLogged, onClick = onClick)
+                scrollableColumns.forEachIndexed { index, col ->
+                    if (col.isStats && !scrollableColumns[index-1].isStats)
+                        BorderDivider(R.color.header_border_color)
+                    HeaderColumn(fixedColumns.size + index, col, isLogged, onClick = onClick)
                 }
             }
+        }
     }
 }
 
@@ -176,19 +179,15 @@ fun SummaryTableHeader(
 @Composable
 fun HeaderColumn(
     id : Int,
-    //sortDirection: SortDirection?,
     col : SummaryTableColumn,
     isLogged: Boolean = false,
-    onClick: (Int) -> Unit
+    onClick: (Int, StatsSubColumn?) -> Unit
 ){
     if (col.isStats){
         Column (
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .leftBorder(colorResource(id = R.color.header_border_color))
-                .rightBorder(colorResource(id = R.color.header_border_color))
-                .width(col.width * 2)
-                .padding(dimensionResource(id = R.dimen.header_padding))
+                .padding(vertical = dimensionResource(id = R.dimen.header_padding))
         ) {
             HeaderText(col.title)
 
@@ -197,33 +196,33 @@ fun HeaderColumn(
                 modifier = Modifier
                     .padding(top = dimensionResource(id = R.dimen.medium_padding))
             ){
-                HeaderStatsColumn(
-                    id = id,
-                    col = col,
-                    statsCol = StatsSubColumn.CATALOG,
-                    modifier = Modifier.weight(1f),
-                    onClick = onClick
-                )
-                HeaderStatsColumn(
-                    id = id,
-                    col = col,
-                    statsCol = StatsSubColumn.COLLECTION,
-                    enabled = isLogged,
-                    modifier = Modifier.weight(1f),
-                    onClick = onClick
-                )
+                StatsSubColumn.values().forEach {
+                    HeaderStatsColumn(
+                        id = id,
+                        col = col,
+                        statsCol = it,
+                        enabled = it == StatsSubColumn.CATALOG || isLogged,
+                        onClick = onClick
+                    )
+                }
             }
         }
+        BorderDivider(R.color.header_border_color)
     }
     else { // Normal Column
-        Box(
-            contentAlignment = col.align,
+        Row(
+            horizontalArrangement = col.align,
             modifier = Modifier
                 .width(col.width)
-                .padding(dimensionResource(id = R.dimen.header_padding))
+                .padding(start = if (col.align == Arrangement.Start) dimensionResource(id = R.dimen.header_padding) else 0.dp)
         ) {
             if (col.isSortable)
-                SortableColumnButton(id = id, title = col.title, isSorted = col.sortedDirection, onClick = onClick)
+                SortableColumnButton(
+                    id = id,
+                    title = col.title,
+                    isSorted = col.sortedDirection,
+                    enabled = col.title != "Price" || isLogged,
+                    onClick = {onClick(it, null)})
             else
                 HeaderText(col.title)
         }
@@ -233,15 +232,15 @@ fun HeaderColumn(
 @Composable
 fun HeaderStatsColumn(
     id : Int,
-    modifier : Modifier = Modifier,
     col : SummaryTableColumn,
     statsCol: StatsSubColumn,
-    enabled: Boolean = true,
-    onClick: (Int) -> Unit
+    enabled: Boolean,
+    onClick: (Int, StatsSubColumn) -> Unit
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
+    Row(
+        horizontalArrangement = col.align,
+        modifier = Modifier
+            .width(col.width)
     ) {
         if (col.isSortable)
             SortableColumnButton(
@@ -252,7 +251,7 @@ fun HeaderStatsColumn(
                 if (col.sortedStats == statsCol) col.sortedDirection
                 else null,
                 enabled = enabled,
-                onClick = onClick
+                onClick = {onClick(it, statsCol)}
             )
         else
             HeaderText(statsCol.title, isSubtitle = true)
@@ -265,31 +264,22 @@ fun SortableColumnButton(
     title: String,
     isSubtitle : Boolean = false,
     isSorted: SortDirection?,
-    enabled : Boolean = true,
+    enabled : Boolean,
     onClick : (Int) -> Unit
 ){
     Row (
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
         modifier = Modifier
-            .fillMaxWidth()
             .clickable(enabled = enabled) { onClick(id) }
             .alpha(if (enabled) 1f else DISABLED_HEADER_BUTTON_ALPHA)
     ){
-        ConstraintLayout {
-            HeaderText(title, isSubtitle = isSubtitle, modifier = Modifier.constrainAs(createRef()){
-                centerVerticallyTo(parent)
-            })
-            if (isSorted != null)
-                SortIcon(dir = isSorted, modifier = Modifier.constrainAs(createRef()){
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.end)
-                })
-            else
-                SortIcons(Modifier.constrainAs(createRef()){
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.end)
-                })
-        }
+        HeaderText(title, isSubtitle = isSubtitle)
+        if (isSorted != null)
+            SortIcon(dir = isSorted, inactive = false)
+        else
+            SortIcons()
+
     }
 }
 
@@ -306,32 +296,32 @@ fun HeaderText(text : String, modifier : Modifier = Modifier, isSubtitle: Boolea
 }
 
 @Composable
-fun SortIcon(dir : SortDirection, modifier : Modifier = Modifier, inactive : Boolean = false){
-    val vertOffset = if (dir == SortDirection.ASC) (-3).dp else 3.dp
-    Icon(
-        painter = painterResource(
-            if (dir == SortDirection.ASC) R.drawable.sort_asc
-            else R.drawable.sort_desc
-        ),
-        contentDescription = "",
-        tint = color_table_header_text,
-        modifier = modifier
-            .size(dimensionResource(id = R.dimen.sort_icon_size))
-            .absoluteOffset(x = (-3).dp, y = vertOffset)
-            .alpha(if (inactive) INACTIVE_SORT_ICON_ALPHA else 1f)
-    )
-}
-
-@Composable
-fun SortIcons(modifier : Modifier = Modifier){
-    Box(
-        modifier = modifier
-    ) {
+fun SortIcons(){
+    Box{
         SortIcon(dir = SortDirection.ASC, inactive = true)
         SortIcon(dir = SortDirection.DESC, inactive = true)
     }
 }
 
+
+@Composable
+fun SortIcon(dir : SortDirection, inactive : Boolean){
+    val vertOffset = if (dir == SortDirection.ASC) (-3).dp else 2.5.dp
+
+    Image(
+        painter = painterResource(
+            if (dir == SortDirection.ASC) R.drawable.sort_asc
+            else R.drawable.sort_desc
+        ),
+        contentDescription = "",
+        colorFilter = ColorFilter.tint(Color.White),
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .width(dimensionResource(id = R.dimen.sort_icon_size))
+            .alpha(if (inactive) INACTIVE_SORT_ICON_ALPHA else 1f)
+            .absoluteOffset(x = 0.dp, y = vertOffset)
+    )
+}
 
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
@@ -340,6 +330,7 @@ fun SummaryTableData(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     data : List<List<Any?>>,
+    isCompactWidth : Boolean,
     horizontalScroll : ScrollState,
     onClick:  (colIndex: Int, dataId : UInt) -> Unit
 ){
@@ -376,17 +367,18 @@ fun SummaryTableData(
                     columns = fixedColumns,
                     data = item,
                     firstDataIndex = 0,
+                    hasMoreColumns = scrollableColumns != null,
+                    isCompactWidth = isCompactWidth,
                     onClick = onClick
                 )
             }
         }
 
-        if (scrollableColumns != null)
+        if (scrollableColumns != null) {
             // Horizontal scrollable columns
             LazyColumn(
                 state = vertScrollState2,
                 modifier = Modifier
-                    .leftBorder(colorResource(id = R.color.data_border_color))
                     .horizontalScroll(horizontalScroll)
             ) {
                 itemsIndexed(items = data) { index, item ->
@@ -395,10 +387,13 @@ fun SummaryTableData(
                         columns = scrollableColumns,
                         data = item,
                         firstDataIndex = scrollableDataIndex,
+                        hasMoreColumns = false,
+                        isCompactWidth = isCompactWidth,
                         onClick = onClick
                     )
                 }
             }
+        }
     }
 }
 
@@ -408,6 +403,8 @@ fun DataRow(
     columns: List<SummaryTableColumn>,
     data : List<Any?>,
     firstDataIndex : Int,
+    hasMoreColumns: Boolean,
+    isCompactWidth : Boolean,
     onClick: (colIndex: Int, dataId : UInt) -> Unit
 ) {
     var dataIndex = firstDataIndex
@@ -415,25 +412,40 @@ fun DataRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .background(if (isEven) color_table_row_odd else color_table_row_even)
+            .height(IntrinsicSize.Min)
      ) {
         var clickableTextColor = color_table_link_prim
         columns.forEachIndexed { colIndex, col ->
-            when (val value = data[dataIndex]) {
-                is ImageBitmap? -> ImageDataCell(col, value)
-                is String -> TextDataCell(col, value, if (col.isStats) Modifier.leftBorder(colorResource(id = R.color.data_border_color)) else Modifier)
-                is Pair<*,*> -> {
-                    ClickableTextDataCell(col, Pair(value.first as UInt, value.second as String), color = clickableTextColor, onClick = {onClick(colIndex, it)})
-                    clickableTextColor = color_table_link_sec
+            if (!isCompactWidth || col.title.isNotEmpty()) {
+                when (val value = data[dataIndex]) {
+                    is ImageBitmap? -> ImageDataCell(col, value)
+                    is Pair<*, *> -> {
+                        ClickableTextDataCell(
+                            col,
+                            Pair(value.first as UInt, value.second as String),
+                            color = clickableTextColor,
+                            onClick = { onClick(colIndex, it) })
+                        clickableTextColor = color_table_link_sec
+                    }
+
+                    else -> {
+                        if (col.isStats && !columns[colIndex - 1].isStats) {
+                            BorderDivider(R.color.data_border_color)
+                        }
+                        TextDataCell(col, value.toString())
+                    }
                 }
-                else -> TextDataCell(col, "")
             }
 
             if (col.isStats){
                 dataIndex++
-                TextDataCell(col, data[dataIndex] as String, Modifier.rightBorder(colorResource(id = R.color.data_border_color)))
+                TextDataCell(col, data[dataIndex] as String)
+                BorderDivider(R.color.data_border_color)
             }
             dataIndex++
         }
+        if(hasMoreColumns)
+            BorderDivider(R.color.data_border_color)
     }
 }
 
@@ -442,21 +454,20 @@ fun ClickableTextDataCell(
     col : SummaryTableColumn,
     value : Pair<UInt,String>,
     color : Color,
-    modifier: Modifier = Modifier,
     onClick: (UInt) -> Unit
 ){
     Box(
-        contentAlignment = col.align,
-        modifier = modifier
+        contentAlignment = Alignment.CenterStart,
+        modifier = Modifier
             .width(col.width)
-            .padding(dimensionResource(id = R.dimen.data_padding))
+            .padding(vertical = dimensionResource(id = R.dimen.data_padding))
             .clickable {
                 onClick(value.first)
             }
     ) {
         Text(
             text = value.second,
-            style = typographySans.displayMedium,
+            style = typographySans.displaySmall,
             color = color,
             fontWeight = FontWeight.Bold,
             overflow = TextOverflow.Ellipsis,
@@ -471,17 +482,16 @@ fun ClickableTextDataCell(
 fun TextDataCell(
     col : SummaryTableColumn,
     value : String,
-    modifier: Modifier = Modifier,
 ){
     Box(
-        contentAlignment = col.align,
-        modifier = modifier
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
             .width(col.width)
-            .padding(dimensionResource(id = R.dimen.data_padding))
+            .padding(vertical = dimensionResource(id = R.dimen.data_padding))
     ) {
         Text(
             text = value,
-            style = typographySans.displayMedium,
+            style = typographySans.displaySmall,
             fontWeight = if (col.width < dimensionResource(id = R.dimen.narrow_col_size)) FontWeight.Light else FontWeight.Normal,
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
@@ -495,12 +505,9 @@ fun TextDataCell(
 fun ImageDataCell(
     col : SummaryTableColumn,
     value : ImageBitmap?,
-
-    modifier: Modifier = Modifier,
 ){
     Box(
-        contentAlignment = col.align,
-        modifier = modifier
+        modifier = Modifier
             .width(col.width)
             .padding(dimensionResource(id = R.dimen.data_padding))
     ) {
@@ -519,100 +526,52 @@ fun ImageDataCell(
     }
 }
 
-
-
-/*
-
-
-
-private val cols = listOf(
-
+@Composable
+fun BorderDivider(@ColorRes color : Int) {
+    Divider(
+        color = colorResource(id = color),
+        modifier = Modifier
+            .width(1.dp)
+            .fillMaxHeight()
+            .alpha(0.25f)
     )
+}
 
-private val values = listOf(
-    mutableListOf<Any?>(
-        null, "NAM", "Namibia", "1970", "", "2", "1", "1.00 €"
-    ),
-    mutableListOf<Any?>(
-        "usa", "USA", "United States", "1871", "", "1", "1", "234.44 €"
-    ),
-    mutableListOf<Any?>(
-        "", "", "Taiwan (NR)", "1946", "", "1", "-", "-"
-    ),
-    mutableListOf<Any?>(
-        "yug", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia, Democratic Republic of", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "esp", "ESP", "Spain", "1521", "", "3", "4", "1523.40 €"
-    ),
-    mutableListOf<Any?>(
-        "npl", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    ),
-    mutableListOf<Any?>(
-        "", "YUG", "Yugoslavia", "1921", "2006", "5", "4", "23.40 €"
-    )
-)
-*/
-private const val TEST_WIDTH = 412
-private const val TEST_HEIGHT = 892
 
+
+
+
+private const val TEST_WIDTH = 380
+private const val TEST_HEIGHT = 800
+
+private const val STATS_COL_WIDTH = 52
 
 private val summaryTablePreview = SummaryTable(
     columns = listOf(
-        SummaryTableColumn("", width = 40.dp, isImage = true ),
-        SummaryTableColumn("", width = 44.dp ),
-        SummaryTableColumn("Name", width = 220.dp, align = Alignment.CenterStart, isSortable = true, isClickable = true),
-        SummaryTableColumn("From", width = 80.dp, isSortable = true),
-        SummaryTableColumn("To", width = 80.dp, isSortable = true),
-//        SummaryTableColumn("Currencies", width = 70.dp, isStats = true, isSortable = true),
-//        SummaryTableColumn("Price", width = 100.dp, isSortable = true ),
+        SummaryTableColumn(title = "", width = 36.dp, isImage = true ),
+        SummaryTableColumn(title = "", width = 44.dp ),
+        SummaryTableColumn(title = "Name", linkedField = TerritoryFieldName, width = 200.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
+        SummaryTableColumn(title = "Founded", linkedField = TerritoryFieldStart, width = 74.dp, isSortable = true),
+        SummaryTableColumn(title = "Extinct", linkedField = TerritoryFieldEnd, width = 70.dp, isSortable = true),
+        SummaryTableColumn(title = "Currencies", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Issues", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Denomin.", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Note Types", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Variants", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Price", width = 80.dp, isSortable = true)
     ),
     sortedBy = 3,
-    sortDirection = SortDirection.ASC
+    sortDirection = SortDirection.ASC,
+    minFixedColumns = 3
 )
 
 private val dataPreview = listOf<MutableList<Any?>>(
-    mutableListOf(null, "", Pair(289u,"Namibia [NR]"), "1976", ""),
-    mutableListOf(null, "ARG", Pair(28u,"Argentina [NR]"), "1976", "2002"),
-    mutableListOf(null, "LAO", Pair(2u,"Laos"), "1976", ""),
-    mutableListOf(null, "", Pair(9u,"Algeria [T]"), "276", ""),
-    mutableListOf(null, "", Pair(29u,"Algeria [T]"), "276", "")
+    mutableListOf(null, "", Pair(289u,"Namibia [NR]"), "1976", "","1","-","10","-","12","-","100","-","1000","-","-"),
+    mutableListOf(null, "ARG", Pair(28u,"Argentina [NR]"), "1976", "2002","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "LAO", Pair(2u,"Laos"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "LAO", Pair(2u,"Laos"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "", Pair(9u,"Algeria [T]"), "276", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "", Pair(29u,"Algeria [T]"), "276", "","9","-","11","-","10","-","122","-","1222","-","-")
 )
 
 
@@ -629,9 +588,9 @@ fun SummaryTablePreviewPortrait() {
     BanknotesCatalogTheme {
         SummaryTableUI(
             table = summaryTablePreview,
-            fixedColumns = 2,
+            availableWidth = TEST_WIDTH.dp,
             data = dataPreview,
-            onHeaderClick = { _ -> },
+            onHeaderClick = { _, _ -> },
             onDataClick = { _ , _ -> }
         )
     }
@@ -650,9 +609,9 @@ fun SummaryTablePreviewLandscape() {
 
     SummaryTableUI(
         table = summaryTablePreview,
-        fixedColumns = 2,
+        availableWidth = TEST_HEIGHT.dp,
         data = dataPreview,
-        onHeaderClick = { _ -> },
+        onHeaderClick = { _,_ -> },
         onDataClick = { _ , _ -> }
     )
 }
