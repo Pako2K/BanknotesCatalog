@@ -23,6 +23,11 @@ object CurrencyFieldName : CurrencySortableField()
 object CurrencyFieldOwnedBy : CurrencySortableField()
 object CurrencyFieldStart : CurrencySortableField()
 object CurrencyFieldEnd : CurrencySortableField()
+object CurrencyFieldIssues : CurrencySortableField()
+object CurrencyFieldDenominations : CurrencySortableField()
+object CurrencyFieldNotes : CurrencySortableField()
+object CurrencyFieldVariants : CurrencySortableField()
+object CurrencyFieldPrice : CurrencySortableField()
 
 
 // Enumeration of Territory fields which can be used for sorting. Implemented as child of SortableField!
@@ -84,7 +89,15 @@ class BanknotesCatalogRepository private constructor(
     var currencies : List<Currency> = listOf()
         private set
 
+    var currencyCatStats : List<CurrencyStats> = listOf()
+        private set
+
+    var currencyColStats : List<CurrencyStats> = listOf()
+        private set
+
     var territorySummaryStats : Map<String,TerritorySummaryStats> = mapOf()
+        private set
+    var currencySummaryStats : Map<String,CurrencySummaryStats> = mapOf()
         private set
 
     companion object {
@@ -121,6 +134,9 @@ class BanknotesCatalogRepository private constructor(
     suspend fun fetchCurrencies() {
         currencies = banknotesNetworkDataSource.getCurrencies()
     }
+    suspend fun fetchCurrencyStats() {
+        currencyCatStats = banknotesNetworkDataSource.getCurrencyStats()
+    }
 
     fun setStats(continentId : UInt? = null){
         val tmp = mutableMapOf<String, TerritorySummaryStats>()
@@ -144,6 +160,28 @@ class BanknotesCatalogRepository private constructor(
             tmp[type.value.name] = TerritorySummaryStats(current = TerritorySummaryStats.Data(currentCount,currentIssuerCount), extinct = TerritorySummaryStats.Data(extinctCount,extinctIssuerCount))
         }
         territorySummaryStats = tmp
+
+        val tmpCur = mutableMapOf<String, CurrencySummaryStats>()
+        val currenciesByCont = if (continentId!= null) currencies.filter { it.continent.id == continentId } else currencies
+
+        var extinctCount = 0
+        var currentCount = 0
+        var sharedExtinctCount = 0
+        var sharedCurrentCount = 0
+        currenciesByCont.forEach {cur ->
+            val isShared = (cur.sharedBy?.size ?: 0) > 0
+            if (cur.end == null) {
+                currentCount++
+                if (isShared) sharedCurrentCount++
+            } else {
+                extinctCount++
+                if (isShared) sharedExtinctCount++
+            }
+        }
+        tmpCur["Total"] = CurrencySummaryStats(current = CurrencySummaryStats.Data(currentCount), extinct = CurrencySummaryStats.Data(extinctCount) )
+        tmpCur["Shared"] = CurrencySummaryStats(current = CurrencySummaryStats.Data(sharedCurrentCount), extinct = CurrencySummaryStats.Data(sharedExtinctCount) )
+
+        currencySummaryStats = tmpCur
     }
 
     fun sortTerritories(sortBy : TerritorySortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection){
@@ -230,7 +268,7 @@ class BanknotesCatalogRepository private constructor(
         }
     }
 
-    fun sortCurrencies(sortBy : CurrencySortableField, sortingDir : SortDirection){
+    fun sortCurrencies(sortBy : CurrencySortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection){
         currencies = when (sortBy){
             CurrencyFieldName ->
                 if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.name }
@@ -244,6 +282,68 @@ class BanknotesCatalogRepository private constructor(
             CurrencyFieldEnd ->
                 if (sortingDir == SortDirection.DESC) currencies.sortedByDescending { it.endYear }
                 else currencies.sortedBy { it.endYear }
+            CurrencyFieldIssues -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyCatStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                    else
+                        currencies.sortedBy { currencyCatStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyColStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                    else
+                        currencies.sortedBy { currencyColStats.find { it2 -> it2.id == it.id }?.numSeries?:0 }
+                }
+            }
+            CurrencyFieldDenominations -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyCatStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                    else
+                        currencies.sortedBy { currencyCatStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyColStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                    else
+                        currencies.sortedBy { currencyColStats.find { it2 -> it2.id == it.id }?.numDenominations?:0 }
+                }
+            }
+            CurrencyFieldNotes -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyCatStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                    else
+                        currencies.sortedBy { currencyCatStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyColStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                    else
+                        currencies.sortedBy { currencyColStats.find { it2 -> it2.id == it.id }?.numNotes?:0 }
+                }
+            }
+            CurrencyFieldVariants -> {
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyCatStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                    else
+                        currencies.sortedBy { currencyCatStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        currencies.sortedByDescending { currencyColStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                    else
+                        currencies.sortedBy { currencyColStats.find { it2 -> it2.id == it.id }?.numVariants?:0 }
+                }
+            }
+            CurrencyFieldPrice -> {
+                if (sortingDir == SortDirection.DESC)
+                    currencies.sortedByDescending { currencyColStats.find { it2 -> it2.id == it.id }?.price?:0f }
+                else
+                    currencies.sortedBy { currencyColStats.find { it2 -> it2.id == it.id }?.price?:0f }
+            }
         }
     }
 

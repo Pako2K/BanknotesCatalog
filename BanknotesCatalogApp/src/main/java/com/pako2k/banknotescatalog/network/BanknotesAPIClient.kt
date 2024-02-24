@@ -3,6 +3,7 @@ package com.pako2k.banknotescatalog.network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
+import com.pako2k.banknotescatalog.data.CurrencyStats
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryStats
 import com.pako2k.banknotescatalog.data.TerritoryType
@@ -29,6 +30,9 @@ interface BanknotesAPIService{
 
     @GET("currency")
     suspend fun getCurrencies() : List<Currency>
+
+    @GET("currency/stats")
+    suspend fun getCurrencyStats() : List<CurrencyStats>
 }
 
 
@@ -59,4 +63,5 @@ class BanknotesAPIClient (
     suspend fun getTerritories() = retrofitService.getTerritories()
     suspend fun getTerritoryStats() = retrofitService.getTerritoryStats()
     suspend fun getCurrencies() = retrofitService.getCurrencies()
+    suspend fun getCurrencyStats() = retrofitService.getCurrencyStats()
 }

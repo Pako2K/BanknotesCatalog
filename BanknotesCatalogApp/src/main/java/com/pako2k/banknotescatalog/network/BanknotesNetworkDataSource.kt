@@ -8,4 +8,5 @@ class BanknotesNetworkDataSource (
     suspend fun getTerritories() = client.getTerritories()
     suspend fun getTerritoryStats() = client.getTerritoryStats()
     suspend fun getCurrencies() = client.getCurrencies()
+    suspend fun getCurrencyStats() = client.getCurrencyStats()
 }

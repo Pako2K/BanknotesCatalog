@@ -48,10 +48,11 @@ import com.pako2k.banknotescatalog.ui.parts.HeaderMenu
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
-import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
+import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
+import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
 
@@ -158,6 +159,8 @@ fun MainScreen(
                 scope.launch { headerMenuState.apply { close() } }
                 if (mainMenuOption == MenuOption.COUNTRIES)
                     mainViewModel.showTerritoryStats(true)
+                else
+                    mainViewModel.showCurrencyStats(true)
             },
             onClickSettings = {
                 scope.launch { headerMenuState.apply { close() } }
@@ -241,21 +244,33 @@ fun MainScreen(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
+                                .background(color = MaterialTheme.colorScheme.surface)
                                 .fillMaxWidth()
                                 .padding(padding)
                         ) {
-                            CurrenciesView(
-                                width = screenWidth - 2 * padding,
-                                table = uiState.currenciesTable,
-                                data = mainViewModel.currenciesViewData(),
-                                onCurrencyClick = {
-                                    navController.navigate("CURRENCY/$it")
-                                },
-                                onCountryClick = {
-                                    navController.navigate("COUNTRY/$it")
-                                },
-                                sortCallback = { field, statsCol -> mainViewModel.sortCurrenciesBy(field, statsCol) }
-                            )
+                            if (uiState.showCurrencyStats) {
+                                CurrencyStatsUI(
+                                    data = mainViewModel.getCurrencyStats(),
+                                    isLoggedIn = uiState.userLoggedIn,
+                                    onClose = {
+                                        mainViewModel.showCurrencyStats(false)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            if (!uiState.showCurrencyStats || windowSize.heightSizeClass != WindowHeightSizeClass.Compact)
+                                CurrenciesView(
+                                    width = screenWidth - 2 * padding,
+                                    table = uiState.currenciesTable,
+                                    data = mainViewModel.currenciesViewData(),
+                                    onCurrencyClick = {
+                                        navController.navigate("CURRENCY/$it")
+                                    },
+                                    onCountryClick = {
+                                        navController.navigate("COUNTRY/$it")
+                                    },
+                                    sortCallback = { field, statsCol -> mainViewModel.sortCurrenciesBy(field, statsCol) }
+                                )
                         }
                     }
                     composable(MenuOption.DENOMINATIONS.name) {

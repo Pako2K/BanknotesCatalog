@@ -2,10 +2,15 @@ package com.pako2k.banknotescatalog.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.dp
+import com.pako2k.banknotescatalog.data.CurrencyFieldDenominations
 import com.pako2k.banknotescatalog.data.CurrencyFieldEnd
+import com.pako2k.banknotescatalog.data.CurrencyFieldIssues
 import com.pako2k.banknotescatalog.data.CurrencyFieldName
+import com.pako2k.banknotescatalog.data.CurrencyFieldNotes
 import com.pako2k.banknotescatalog.data.CurrencyFieldOwnedBy
+import com.pako2k.banknotescatalog.data.CurrencyFieldPrice
 import com.pako2k.banknotescatalog.data.CurrencyFieldStart
+import com.pako2k.banknotescatalog.data.CurrencyFieldVariants
 import com.pako2k.banknotescatalog.data.SortDirection
 import com.pako2k.banknotescatalog.data.TerritoryFieldCurrencies
 import com.pako2k.banknotescatalog.data.TerritoryFieldDenominations
@@ -50,10 +55,15 @@ data class MainUiState (
     val currenciesTable : SummaryTable = SummaryTable(
         columns = listOf(
             SummaryTableColumn(title = "", width = 44.dp ),
-            SummaryTableColumn(title = "Name", linkedField = CurrencyFieldName, width = 150.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
-            SummaryTableColumn(title = "Territory", linkedField = CurrencyFieldOwnedBy, width = 180.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
-            SummaryTableColumn(title = "Created", linkedField = CurrencyFieldStart, width = 75.dp, isSortable = true),
-            SummaryTableColumn(title = "Finished", linkedField = CurrencyFieldEnd, width = 75.dp, isSortable = true),
+            SummaryTableColumn(title = "Name", linkedField = CurrencyFieldName, width = 140.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
+            SummaryTableColumn(title = "Territory", linkedField = CurrencyFieldOwnedBy, width = 160.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
+            SummaryTableColumn(title = "Created", linkedField = CurrencyFieldStart, width = 74.dp, isSortable = true),
+            SummaryTableColumn(title = "Finished", linkedField = CurrencyFieldEnd, width = 70.dp, isSortable = true),
+            SummaryTableColumn(title = "Issues", linkedField = CurrencyFieldIssues, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+            SummaryTableColumn(title = "Face Values", linkedField = CurrencyFieldDenominations, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+            SummaryTableColumn(title = "Note Types", linkedField = CurrencyFieldNotes, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+            SummaryTableColumn(title = "Variants", linkedField = CurrencyFieldVariants, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+            SummaryTableColumn(title = "Price", linkedField = CurrencyFieldPrice, width = 74.dp, isSortable = true)
         ),
         sortedBy = 1,
         sortDirection = SortDirection.ASC,
@@ -61,5 +71,6 @@ data class MainUiState (
     ),
 
     val showTerritoryStats: Boolean = false,
+    val showCurrencyStats: Boolean = false
 
 )

@@ -1,11 +1,7 @@
 package com.pako2k.banknotescatalog.ui.views
 
 import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import com.pako2k.banknotescatalog.R
@@ -26,20 +22,18 @@ fun CurrenciesView(
 ) {
     Log.d(stringResource(id = R.string.app_log_tag), "Start Currencies")
 
-    Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.fillMaxWidth()) {
-        SummaryTableUI(
-            table = table,
-            availableWidth = width,
-            data = data,
-            onHeaderClick = { colId, statsCol ->
-                sortCallback(table.columns[colId].linkedField as CurrencySortableField, statsCol)
-            },
-            onDataClick = { colId, dataId ->
-                if (colId == 1)
-                    onCurrencyClick(dataId)
-                else
-                    onCountryClick(dataId)
-            }
-        )
-    }
+    SummaryTableUI(
+        table = table,
+        availableWidth = width,
+        data = data,
+        onHeaderClick = { colId, statsCol ->
+            sortCallback(table.columns[colId].linkedField as CurrencySortableField, statsCol)
+        },
+        onDataClick = { colId, dataId ->
+            if (colId == 1)
+                onCurrencyClick(dataId)
+            else
+                onCountryClick(dataId)
+        }
+    )
 }

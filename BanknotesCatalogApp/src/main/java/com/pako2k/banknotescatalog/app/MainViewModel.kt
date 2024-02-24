@@ -11,6 +11,7 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
+import com.pako2k.banknotescatalog.data.CurrencySummaryStats
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.data.TerritorySummaryStats
@@ -108,13 +109,23 @@ class MainViewModel private constructor(
 
         for(cur in currenciesViewData){
             val ownedBy = cur.ownedBy.maxBy { it.start }
+            val stats = repository.currencyCatStats.find { it.id == cur.id }
             uiData.add(
                 listOf(
                     cur.iso3 ?: "",
                     Pair(cur.id, cur.name),
                     Pair(ownedBy.territory.id, ownedBy.territory.name),
                     cur.startYear.toString(),
-                    cur.endYear?.toString() ?: ""
+                    cur.endYear?.toString() ?: "",
+                    stats?.numSeries.toString(),
+                    "-",
+                    stats?.numDenominations.toString(),
+                    "-",
+                    stats?.numNotes.toString(),
+                    "-",
+                    stats?.numVariants.toString(),
+                    "-",
+                    "-"
                 )
             )
         }
@@ -128,6 +139,10 @@ class MainViewModel private constructor(
 
     fun getTerritoryStats() : Map<String, TerritorySummaryStats> {
         return repository.territorySummaryStats
+    }
+
+    fun getCurrencyStats() : Map<String, CurrencySummaryStats> {
+        return repository.currencySummaryStats
     }
 
     // ViewModel can only be created by ViewModelProvider.Factory
@@ -166,7 +181,7 @@ class MainViewModel private constructor(
                 ComponentState.DONE
             }
             catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                 ComponentState.FAILED
             }
 
@@ -186,7 +201,7 @@ class MainViewModel private constructor(
                 ComponentState.DONE
             }
             catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                 ComponentState.FAILED
             }
 
@@ -195,7 +210,7 @@ class MainViewModel private constructor(
         }.let { jobs.add(it) }
 
         viewModelScope.async {
-            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritories")
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritoryStats")
 
             // Get Territory Stats
             val result : ComponentState = try {
@@ -203,11 +218,11 @@ class MainViewModel private constructor(
                 ComponentState.DONE
             }
             catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString())
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with $result")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritoryStats with $result")
             return@async result
         }.let { jobs.add(it) }
 
@@ -230,8 +245,27 @@ class MainViewModel private constructor(
             return@async result
         }.let { jobs.add(it) }
 
+        viewModelScope.async {
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getCurrencyStats")
+
+            // Get Currency Stats
+            val result : ComponentState = try {
+                repository.fetchCurrencyStats()
+                ComponentState.DONE
+            }
+            catch (exc : Exception){
+                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                ComponentState.FAILED
+            }
+
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencyStats with $result")
+            return@async result
+        }.let { jobs.add(it) }
+
         viewModelScope.launch{
+            Log.d(ctx.getString(R.string.app_log_tag), "Waiting for all jobs...")
             val results = jobs.awaitAll()
+            Log.d(ctx.getString(R.string.app_log_tag), "Jobs finished with result: ${results.toString()}")
             val finalResult =
                 if (results.contains(ComponentState.FAILED))
                     ComponentState.FAILED
@@ -240,12 +274,11 @@ class MainViewModel private constructor(
                     ComponentState.DONE
                 }
 
-            if (finalResult == ComponentState.DONE)
-                _mainUiInitializationState.update {currentState ->
-                    currentState.copy(
-                        state = finalResult
-                    )
-                }
+            _mainUiInitializationState.update {currentState ->
+                currentState.copy(
+                    state = finalResult
+                )
+            }
         }
 
         Log.d(ctx.getString(R.string.app_log_tag), "End INIT MainViewModel")
@@ -334,7 +367,7 @@ class MainViewModel private constructor(
         val sortedColumn = _mainUiState.value.currenciesTable.sortedBy
         val newSortingDir = _mainUiState.value.currenciesTable.columns[sortedColumn].sortedDirection!!
 
-        repository.sortCurrencies(sortBy, newSortingDir)
+        repository.sortCurrencies(sortBy, statsCol, newSortingDir)
 
         currenciesViewData = _mainUiState.value.selectedContinent?.let {repository.getCurrencies(it)}?:repository.currencies
 
@@ -349,6 +382,14 @@ class MainViewModel private constructor(
         _mainUiState.update { currentState ->
             currentState.copy(
                 showTerritoryStats = visible
+            )
+        }
+    }
+
+    fun showCurrencyStats(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showCurrencyStats = visible
             )
         }
     }
