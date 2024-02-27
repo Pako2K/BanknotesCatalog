@@ -99,7 +99,7 @@ fun CurrencyView(
                     contentAlignment = Alignment.TopEnd,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(dimensionResource(id = R.dimen.xs_padding))
+                        //.padding(dimensionResource(id = R.dimen.xs_padding))
                 ) {
                     FavouriteIcon(
                         size = dimensionResource(id = R.dimen.favourite_icon_size),
@@ -146,9 +146,8 @@ private fun CurrencyHeader(
 
         Column (
             modifier = Modifier
-                .padding(
-                    horizontal = dimensionResource(id = R.dimen.medium_padding),
-                    vertical = dimensionResource(id = R.dimen.small_padding))
+                .padding(horizontal = dimensionResource(id = R.dimen.medium_padding))
+                .padding(top = dimensionResource(id = R.dimen.small_padding))
         ){
             // Symbol and name
             Row(
@@ -158,6 +157,7 @@ private fun CurrencyHeader(
                 if (!data.symbol.isNullOrEmpty())
                     Text(
                         data.symbol,
+                        style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.outlineVariant,
                         modifier = Modifier
                             .border(
@@ -200,7 +200,7 @@ private fun CurrencyHeader(
                         text= "1 ${data.symbol?:data.name} = ${it.value?.toInt()} $unitName $abbreviation",
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier
                             .padding(bottom = dimensionResource(id = R.dimen.medium_padding))
                         )
@@ -215,6 +215,7 @@ private fun CurrencyHeader(
             else
                 ListTerritories(territories = data.ownedByExt, onClick = onCountryClick)
 
+            // Replaced by
             if (data.successor != null) {
                 var oldCur = data.iso3 ?: data.name
                 var newCur = data.successorExt?.currency?.iso3?:data.successorExt?.currency?.name?:""

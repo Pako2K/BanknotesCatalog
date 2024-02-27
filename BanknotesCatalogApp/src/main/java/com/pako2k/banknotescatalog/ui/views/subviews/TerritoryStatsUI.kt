@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +71,7 @@ private val subColWidth = 44.dp
 @Composable
 fun TerritoryStatsUI (
     data : Map<String, TerritorySummaryStats>,
+    continentName : String?,
     isLoggedIn : Boolean,
     onClose : () -> Unit
 ){
@@ -87,8 +88,8 @@ fun TerritoryStatsUI (
                 .padding(dimensionResource(id = R.dimen.small_padding)
             )
         ) {
-            CardTitle(onClose)
-            Divider(thickness = 2.dp)
+            CardTitle(continentName, onClose)
+            HorizontalDivider(thickness = 2.dp)
             StatsTable(data, isLoggedIn)
         }
 
@@ -98,12 +99,17 @@ fun TerritoryStatsUI (
 
 @Composable
 private fun CardTitle(
+    continentName : String?,
     onClose : () -> Unit
 ){
     val style = MaterialTheme.typography.headlineMedium
+    val continentSuffix =
+        if(continentName != null) " - $continentName"
+        else ""
+
     Row {
         Text(
-            text = "Territories in Catalog",
+            text = "Territories in Catalog$continentSuffix",
             style = style,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
@@ -395,7 +401,7 @@ private val testData = mapOf(
 @Composable
 private fun TerritoryStatsUIPreviewPortrait() {
     BanknotesCatalogTheme {
-        TerritoryStatsUI (testData, true) { }
+        TerritoryStatsUI (testData, "Africa",true) { }
     }
 }
 
@@ -404,7 +410,7 @@ private fun TerritoryStatsUIPreviewPortrait() {
 private fun TerritoryStatsUIPreviewLandscape() {
     BanknotesCatalogTheme {
         Surface {
-            TerritoryStatsUI (testData, false) { }
+            TerritoryStatsUI (testData, null,false) { }
         }
     }
 }

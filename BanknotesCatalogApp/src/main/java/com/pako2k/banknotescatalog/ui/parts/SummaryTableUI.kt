@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -22,8 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -131,7 +130,7 @@ fun SummaryTableUI(
 }
 
 @Composable
-fun SummaryTableHeader(
+private fun SummaryTableHeader(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     isLogged : Boolean = false,
@@ -177,7 +176,7 @@ fun SummaryTableHeader(
 
 
 @Composable
-fun HeaderColumn(
+private fun HeaderColumn(
     id : Int,
     col : SummaryTableColumn,
     isLogged: Boolean = false,
@@ -230,7 +229,7 @@ fun HeaderColumn(
 }
 
 @Composable
-fun HeaderStatsColumn(
+private fun HeaderStatsColumn(
     id : Int,
     col : SummaryTableColumn,
     statsCol: StatsSubColumn,
@@ -259,7 +258,7 @@ fun HeaderStatsColumn(
 }
 
 @Composable
-fun SortableColumnButton(
+private fun SortableColumnButton(
     id : Int,
     title: String,
     isSubtitle : Boolean = false,
@@ -284,7 +283,7 @@ fun SortableColumnButton(
 }
 
 @Composable
-fun HeaderText(text : String, modifier : Modifier = Modifier, isSubtitle: Boolean = false){
+private fun HeaderText(text : String, modifier : Modifier = Modifier, isSubtitle: Boolean = false){
     val weight = if (isSubtitle) FontWeight.Normal else FontWeight.Bold
     Text(
         text,
@@ -296,7 +295,7 @@ fun HeaderText(text : String, modifier : Modifier = Modifier, isSubtitle: Boolea
 }
 
 @Composable
-fun SortIcons(){
+private fun SortIcons(){
     Box{
         SortIcon(dir = SortDirection.ASC, inactive = true)
         SortIcon(dir = SortDirection.DESC, inactive = true)
@@ -305,7 +304,7 @@ fun SortIcons(){
 
 
 @Composable
-fun SortIcon(dir : SortDirection, inactive : Boolean){
+private fun SortIcon(dir : SortDirection, inactive : Boolean){
     val vertOffset = if (dir == SortDirection.ASC) (-3).dp else 2.5.dp
 
     Image(
@@ -326,7 +325,7 @@ fun SortIcon(dir : SortDirection, inactive : Boolean){
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
-fun SummaryTableData(
+private fun SummaryTableData(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     data : List<List<Any?>>,
@@ -398,7 +397,7 @@ fun SummaryTableData(
 }
 
 @Composable
-fun DataRow(
+private fun DataRow(
     isEven : Boolean,
     columns: List<SummaryTableColumn>,
     data : List<Any?>,
@@ -450,7 +449,7 @@ fun DataRow(
 }
 
 @Composable
-fun ClickableTextDataCell(
+private fun ClickableTextDataCell(
     col : SummaryTableColumn,
     value : Pair<UInt,String>,
     color : Color,
@@ -479,7 +478,7 @@ fun ClickableTextDataCell(
 }
 
 @Composable
-fun TextDataCell(
+private fun TextDataCell(
     col : SummaryTableColumn,
     value : String,
 ){
@@ -502,7 +501,7 @@ fun TextDataCell(
 }
 
 @Composable
-fun ImageDataCell(
+private fun ImageDataCell(
     col : SummaryTableColumn,
     value : ImageBitmap?,
 ){
@@ -527,12 +526,11 @@ fun ImageDataCell(
 }
 
 @Composable
-fun BorderDivider(@ColorRes color : Int) {
-    Divider(
+private fun BorderDivider(@ColorRes color : Int) {
+    VerticalDivider(
         color = colorResource(id = color),
         modifier = Modifier
             .width(1.dp)
-            .fillMaxHeight()
             .alpha(0.25f)
     )
 }

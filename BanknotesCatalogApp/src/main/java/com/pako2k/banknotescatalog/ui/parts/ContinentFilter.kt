@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +23,7 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -52,7 +53,7 @@ fun ContinentFilter (
     val columns = if (windowWidth == WindowWidthSizeClass.Compact) 3 else 6
 
     Column {
-        Divider(
+        HorizontalDivider(
             thickness = 2.dp,
             color = Color.DarkGray
         )
@@ -147,7 +148,9 @@ fun ContinentItem(continent: Continent,
                 .fillMaxWidth()
                 .padding(horizontal = dimensionResource(id = R.dimen.small_padding)),
         ) {
-            Row {
+            Row (
+                verticalAlignment = Alignment.CenterVertically
+            ){
                 Icon(
                     painter = painterResource(id = ContinentIconMap[continent.name] ?: 0),
                     contentDescription = null,

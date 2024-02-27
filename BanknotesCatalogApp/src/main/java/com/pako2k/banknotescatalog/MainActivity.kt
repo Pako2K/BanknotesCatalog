@@ -22,6 +22,7 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(getString(R.string.app_log_tag), "${this::class.simpleName} - ${{}.javaClass.enclosingMethod?.name}")

@@ -38,6 +38,7 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 fun Header(
     modifier: Modifier = Modifier,
     isMenuEnabled : Boolean,
+    hasFilter : Boolean,
     onMenuClicked : () -> Unit,
     onBookmarksClicked: () -> Unit
 ){
@@ -70,6 +71,9 @@ fun Header(
                         .size(dimensionResource(id = R.dimen.header_menu_icon_size))
 
                 ) {
+                    Box (
+                        contentAlignment = Alignment.BottomEnd
+                    ){
                     Icon(
                         painter = painterResource(id = R.drawable.view_menu_icon),
                         contentDescription = "View Menu Icon",
@@ -77,6 +81,16 @@ fun Header(
                         modifier = Modifier
                             .size(dimensionResource(id = R.dimen.header_menu_icon_size))
                     )
+                        if (hasFilter)
+                            Icon(
+                                painter = painterResource(id = R.drawable.filter_icon),
+                                contentDescription = "View Menu Icon with filters",
+                                tint = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = if (isMenuEnabled) 0.8f else 0.5f),
+                                modifier = Modifier
+                                    //.offset(x = dimensionResource(id = R.dimen.xs_padding))
+                                    .size(dimensionResource(id = R.dimen.header_menu_icon_size) / 2)
+                            )
+                    }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -99,7 +113,7 @@ fun Header(
 
                     )
                 }
-                //Spacer(modifier = Modifier.weight(1f))
+
                 IconButton(
                     onClick = onBookmarksClicked,
                     modifier = Modifier
@@ -132,14 +146,14 @@ fun Header(
 }
 
 
-private const val TEST_WIDTH = 380
+private const val TEST_WIDTH = 370
 private const val TEST_HEIGHT = 800
 
 @Preview(widthDp = TEST_WIDTH, heightDp = TEST_WIDTH)
 @Composable
 private fun HeaderPreviewPortrait() {
     BanknotesCatalogTheme {
-        Header(isMenuEnabled = false, onMenuClicked = {}, onBookmarksClicked = {})
+        Header(isMenuEnabled = false, hasFilter = true, onMenuClicked = {}, onBookmarksClicked = {})
     }
 }
 
@@ -147,6 +161,6 @@ private fun HeaderPreviewPortrait() {
 @Composable
 private fun HeaderPreviewLandscape() {
     BanknotesCatalogTheme {
-        Header(isMenuEnabled = true, onMenuClicked = {}, onBookmarksClicked = {})
+        Header(isMenuEnabled = true, hasFilter = true, onMenuClicked = {}, onBookmarksClicked = {})
     }
 }

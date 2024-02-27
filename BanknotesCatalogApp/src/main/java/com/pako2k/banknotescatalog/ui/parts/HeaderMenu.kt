@@ -37,7 +37,7 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.theme.color_menu_background
 
 
-private const val DRAWER_WIDTH = 210
+private const val DRAWER_WIDTH = 180
 
 
 @Composable
@@ -49,6 +49,7 @@ fun HeaderMenu (
     onClickSettings : () -> Unit,
     onContent : @Composable () -> Unit
 ) {
+    val roundedSize = 20.dp
     ModalNavigationDrawer(
         scrimColor = Color.White.copy(alpha = 0.8f),
         gesturesEnabled = true,
@@ -56,16 +57,17 @@ fun HeaderMenu (
         modifier = Modifier.padding(drawerPadding),
         drawerContent = {
             ModalDrawerSheet(
+                drawerShape = RoundedCornerShape(topEnd = roundedSize, bottomEnd = roundedSize),
                 modifier = Modifier
                     .width(DRAWER_WIDTH.dp)
                     .height(IntrinsicSize.Min)
                     .shadow(
                         6.dp,
                         clip = false,
-                        shape = RoundedCornerShape(28.dp)// As per documentation
+                        shape = RoundedCornerShape(roundedSize)
                     )
             ) {
-                OptionItem("Filter Options", R.drawable.filter_icon, onClickFilter)
+                OptionItem("Filters", R.drawable.filter_icon, onClickFilter)
                 OptionItem("Statistics", R.drawable.stats_icon, onClickStats)
                 OptionItem("Settings", R.drawable.settings_icon, onClickSettings)
             }
@@ -89,7 +91,7 @@ private fun OptionItem(
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = dimensionResource(id = R.dimen.small_padding))
+                    .padding(horizontal = dimensionResource(id = R.dimen.xs_padding))
             )
                 },
         selected = false,
@@ -106,7 +108,7 @@ private fun OptionItem(
 private fun OptionIcon(
     @DrawableRes icon : Int
 ){
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(4.dp)
     val color = MaterialTheme.colorScheme.onPrimaryContainer
 
     Icon(
@@ -115,8 +117,10 @@ private fun OptionIcon(
         tint = MaterialTheme.colorScheme.outlineVariant,
         modifier = Modifier
             .size(dimensionResource(id = R.dimen.header_menu_icon_size_small))
-            .background(color = MaterialTheme.colorScheme.primary, shape = shape)
+            .background(color = MaterialTheme.colorScheme.tertiary, shape = shape)
             .border(1.dp, color = color, shape = shape)
+            .padding(dimensionResource(id = R.dimen.xs_padding))
+
     )
 }
 

@@ -49,7 +49,7 @@ import com.pako2k.banknotescatalog.data.ContinentIconMap
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryId
 import com.pako2k.banknotescatalog.data.TerritoryTypeKey
-import com.pako2k.banknotescatalog.data.TerritoryTypes
+import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 import com.pako2k.banknotescatalog.ui.parts.FavouriteIcon
 import com.pako2k.banknotescatalog.ui.parts.NameIso3Text
 import com.pako2k.banknotescatalog.ui.parts.SubviewMenu
@@ -308,7 +308,7 @@ private val testData = Territory(
     name = "United States",
     iso3 = "USA",
     continent = Continent(3u, "South America"),
-    territoryType = TerritoryTypeKey(2u, TerritoryTypes.NR.name),
+    territoryType = TerritoryTypeKey(2u, TerritoryTypeEnum.NR.name),
     iso2 = "US",
     officialName = "United States of America And America America And America",
     start = 1926,

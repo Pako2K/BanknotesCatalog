@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryTypes
+import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 import com.pako2k.banknotescatalog.ui.parts.TerritoryBadge
 
 @Composable
@@ -82,11 +82,11 @@ fun TerritoryInfoSubview(
             val maxItemWidth =
                 if (screenWidth < 450) 180.dp
                 else 260.dp
-            if (data.territoryType.name == TerritoryTypes.TER.value) {
+            if (data.territoryType.name == TerritoryTypeEnum.T.value) {
                 LinkedTerritories("Belongs to", listOf(data.parentExt!!), maxItemWidth, onClick)
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
             }
-            if (data.territoryType.name == TerritoryTypes.NR.value) {
+            if (data.territoryType.name == TerritoryTypeEnum.NR.value) {
                 LinkedTerritories("Claimed by", listOf(data.parentExt!!), maxItemWidth, onClick)
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
             }

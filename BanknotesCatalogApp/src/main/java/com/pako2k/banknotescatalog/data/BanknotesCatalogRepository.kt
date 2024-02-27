@@ -348,8 +348,23 @@ class BanknotesCatalogRepository private constructor(
     }
 
 
-    fun getTerritories (byContinent : UInt) : List<Territory> {
-        return territories.filter { it.continent.id == byContinent }
+    fun getTerritories (
+        byContinent : UInt?,
+        byType : List<TerritoryTypeEnum>?,
+        isExisting : Boolean,
+        isExtinct : Boolean,
+        byFoundedDates: FilterDates,
+        byExtinctDates: FilterDates
+        ) : List<Territory>
+    {
+        var result = territories
+        if (byContinent != null) result = result.filter { ter -> ter.continent.id == byContinent }
+        if (byType != null) result = result.filter { ter -> byType.find { it.name == territoryTypes[ter.territoryType.id]?.abbreviation} != null }
+        if (isExisting && !isExtinct ) result = result.filter { ter -> ter.end == null }
+        if (!isExisting && isExtinct ) result = result.filter { ter -> ter.end != null }
+        if (byFoundedDates.from != null || byFoundedDates.to != null) result = result.filter { ter -> byFoundedDates.from?.let { ter.start >= it }?:true && byFoundedDates.to?.let { ter.start <= it }?:true }
+        if (byExtinctDates.from != null || byExtinctDates.to != null) result = result.filter { ter -> byExtinctDates.from?.let { ter.end != null && ter.end >= it }?:true && byExtinctDates.to?.let { ter.end != null && ter.end <= it }?:true }
+        return result
     }
 
     fun getCurrencies (byContinent : UInt) : List<Currency> {

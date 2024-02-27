@@ -12,10 +12,11 @@ import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.CurrencySummaryStats
+import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritorySortableField
 import com.pako2k.banknotescatalog.data.TerritorySummaryStats
-import com.pako2k.banknotescatalog.data.TerritoryTypes
+import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 import com.pako2k.banknotescatalog.data.UserPreferences
 import com.pako2k.banknotescatalog.data.UserPreferencesRepository
 import kotlinx.coroutines.Deferred
@@ -42,6 +43,7 @@ class MainViewModel private constructor(
 
     // Private so it cannot be updated outside this MainViewModel
     private val _mainUiState = MutableStateFlow(MainUiState())
+
     // Public property to read the UI state
     val uiState = _mainUiState.asStateFlow()
 
@@ -69,7 +71,7 @@ class MainViewModel private constructor(
 
         for(ter in territoriesViewData){
             val terTypSuffix =
-                if( ter.territoryType.name == TerritoryTypes.IND.value) ""
+                if( ter.territoryType.name == TerritoryTypeEnum.Ind.value) ""
                 else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
             val stats = repository.territoryCatStats.find { it.id == ter.id }
             uiData.add(
@@ -265,7 +267,7 @@ class MainViewModel private constructor(
         viewModelScope.launch{
             Log.d(ctx.getString(R.string.app_log_tag), "Waiting for all jobs...")
             val results = jobs.awaitAll()
-            Log.d(ctx.getString(R.string.app_log_tag), "Jobs finished with result: ${results.toString()}")
+            Log.d(ctx.getString(R.string.app_log_tag), "Jobs finished with result: $results")
             val finalResult =
                 if (results.contains(ComponentState.FAILED))
                     ComponentState.FAILED
@@ -326,14 +328,10 @@ class MainViewModel private constructor(
             if (continentId == uiState.value.selectedContinent) null
             else continentId
 
-        if (newSelection != null) {
-            territoriesViewData = repository.getTerritories(newSelection)
-            currenciesViewData = repository.getCurrencies(newSelection)
-        }
-        else{
-            territoriesViewData = repository.territories
-            currenciesViewData = repository.currencies
-        }
+        currenciesViewData = if (newSelection != null)
+            repository.getCurrencies(newSelection)
+        else
+            repository.currencies
 
         repository.setStats(newSelection)
 
@@ -342,18 +340,18 @@ class MainViewModel private constructor(
                 selectedContinent = newSelection
             )
         }
+        filterTerritories()
     }
 
     fun sortTerritoriesBy(sortBy : TerritorySortableField, statsCol : StatsSubColumn?) {
-
         _mainUiState.value.territoriesTable.sortBy( _mainUiState.value.territoriesTable.getCol(sortBy)?:2, statsCol)
 
         val sortedColumn = _mainUiState.value.territoriesTable.sortedBy
         val newSortingDir = _mainUiState.value.territoriesTable.columns[sortedColumn].sortedDirection!!
         repository.sortTerritories(sortBy, statsCol, newSortingDir )
 
-
-        territoriesViewData = _mainUiState.value.selectedContinent?.let {repository.getTerritories(it)}?:repository.territories
+        // Apply filter to the entire sorted list
+        filterTerritories()
 
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -378,10 +376,12 @@ class MainViewModel private constructor(
         }
     }
 
+
     fun showTerritoryStats(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
-                showTerritoryStats = visible
+                showTerritoryStats = visible,
+                showTerritoryFilters = false
             )
         }
     }
@@ -389,8 +389,89 @@ class MainViewModel private constructor(
     fun showCurrencyStats(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
-                showCurrencyStats = visible
+                showCurrencyStats = visible,
+                showCurrencyFilters = false
             )
         }
+    }
+
+    fun showTerritoryFilters(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showTerritoryFilters = visible,
+                showTerritoryStats = false
+            )
+        }
+    }
+
+    fun showCurrencyFilters(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showCurrencyFilters = visible,
+                showCurrencyStats = false
+            )
+        }
+    }
+
+    fun updateFilterTerritoryType(type : TerritoryTypeEnum, isSelected : Boolean){
+        val newMap = _mainUiState.value.filterTerritoryTypes.mapValues { if(it.key == type) isSelected else it.value }
+
+        // At least one type must be selected!!
+        if (!newMap.containsValue(true)) return
+
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterTerritoryTypes = newMap
+            )
+        }
+        filterTerritories()
+    }
+
+    fun updateFilterTerritoryState(isSelected : Pair<Boolean, Boolean>){
+        // At least one state must be true!!
+        if (!isSelected.first && !isSelected.second) return
+
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterTerritoryState = isSelected
+            )
+        }
+        filterTerritories()
+    }
+
+    fun updateFilterTerritoryFoundedDates(dates : FilterDates){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterTerFounded = dates
+            )
+        }
+        if (dates.isValid) {
+            filterTerritories()
+        }
+    }
+
+    fun updateFilterTerritoryExtinctDates(dates : FilterDates){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterTerExtinct = dates
+            )
+        }
+        if (dates.isValid) {
+            filterTerritories()
+        }
+    }
+
+    private fun filterTerritories() {
+        val filterTerTypesToList = _mainUiState.value.filterTerritoryTypes.filter { it.value }.keys.toList().let {
+            if (it.size == _mainUiState.value.filterTerritoryTypes.size) null else it
+        }
+        territoriesViewData = repository.getTerritories(
+            _mainUiState.value.selectedContinent,
+            filterTerTypesToList,
+            _mainUiState.value.filterTerritoryState.first,
+            _mainUiState.value.filterTerritoryState.second,
+            _mainUiState.value.filterTerFounded,
+            _mainUiState.value.filterTerExtinct
+        )
     }
 }

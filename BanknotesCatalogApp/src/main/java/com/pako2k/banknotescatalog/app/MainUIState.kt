@@ -11,6 +11,7 @@ import com.pako2k.banknotescatalog.data.CurrencyFieldOwnedBy
 import com.pako2k.banknotescatalog.data.CurrencyFieldPrice
 import com.pako2k.banknotescatalog.data.CurrencyFieldStart
 import com.pako2k.banknotescatalog.data.CurrencyFieldVariants
+import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.SortDirection
 import com.pako2k.banknotescatalog.data.TerritoryFieldCurrencies
 import com.pako2k.banknotescatalog.data.TerritoryFieldDenominations
@@ -21,6 +22,7 @@ import com.pako2k.banknotescatalog.data.TerritoryFieldNotes
 import com.pako2k.banknotescatalog.data.TerritoryFieldPrice
 import com.pako2k.banknotescatalog.data.TerritoryFieldStart
 import com.pako2k.banknotescatalog.data.TerritoryFieldVariants
+import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 
 private const val STATS_COL_WIDTH = 52
 
@@ -71,6 +73,13 @@ data class MainUiState (
     ),
 
     val showTerritoryStats: Boolean = false,
-    val showCurrencyStats: Boolean = false
+    val showCurrencyStats: Boolean = false,
 
+    val showTerritoryFilters : Boolean = false,
+    val showCurrencyFilters: Boolean = false,
+
+    val filterTerritoryTypes : Map<TerritoryTypeEnum, Boolean> = TerritoryTypeEnum.values().associateWith { true },
+    val filterTerritoryState : Pair<Boolean,Boolean> = Pair(true,true),
+    val filterTerFounded : FilterDates = FilterDates(null,null),
+    val filterTerExtinct : FilterDates = FilterDates(null,null)
 )
