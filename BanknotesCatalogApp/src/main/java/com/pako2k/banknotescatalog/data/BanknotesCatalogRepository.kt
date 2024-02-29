@@ -1,12 +1,14 @@
 package com.pako2k.banknotescatalog.data
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import com.pako2k.banknotescatalog.network.BanknotesNetworkDataSource
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 
@@ -64,7 +66,9 @@ object TerritoryFieldPrice : TerritorySortableField()
 
 class BanknotesCatalogRepository private constructor(
     private val flagsLocalDataSource: FlagsLocalDataSource,
-    private val banknotesNetworkDataSource: BanknotesNetworkDataSource
+    private val banknotesNetworkDataSource: BanknotesNetworkDataSource,
+    private val continentCacheRepository: ContinentCacheRepository,
+    private val terTypeCacheRepository: TerritoryTypeCacheRepository
 ){
     var flags : Map<String,ImageBitmap> = mapOf()
         private set
@@ -103,9 +107,18 @@ class BanknotesCatalogRepository private constructor(
     companion object {
         private var _repository : BanknotesCatalogRepository? = null
 
-        fun create(ctx : Context, banknotesApiClient : BanknotesAPIClient) : BanknotesCatalogRepository {
+        fun create(
+            ctx : Context,
+            banknotesApiClient : BanknotesAPIClient,
+            continentCacheRepository: ContinentCacheRepository,
+            terTypeCacheRepository: TerritoryTypeCacheRepository
+        ) : BanknotesCatalogRepository {
             if (_repository==null)
-                _repository = BanknotesCatalogRepository(FlagsLocalDataSource(ctx.assets), BanknotesNetworkDataSource(banknotesApiClient))
+                _repository = BanknotesCatalogRepository(
+                    FlagsLocalDataSource(ctx.assets),
+                    BanknotesNetworkDataSource(banknotesApiClient),
+                    continentCacheRepository,
+                    terTypeCacheRepository)
 
             return _repository as BanknotesCatalogRepository
         }
@@ -113,14 +126,41 @@ class BanknotesCatalogRepository private constructor(
 
 
     suspend fun fetchContinents() {
-        continents = banknotesNetworkDataSource.getContinents().associateBy { cont -> cont.id }
+        val cache = continentCacheRepository.continentCacheFlow.first()
+
+        if (cache.isNotEmpty()) {
+            Log.i("App-Repository", "Continents retrieved from Cache")
+            continents = cache.associateBy { it.id }
+        }
+        else{
+            Log.i("App-Repository", "Sending Network request to getContinents")
+            val result = banknotesNetworkDataSource.getContinents()
+            continents = result.associateBy { it.id }
+
+            // Write Continents to Cache (Preferences)
+            continentCacheRepository.updateContinents(result)
+        }
     }
 
     suspend fun fetchTerritoryTypes() {
-        territoryTypes = banknotesNetworkDataSource.getTerritoryTypes().associateBy { type -> type.id }
+        val cache = terTypeCacheRepository.territoryTypeCacheFlow.first()
+
+        if (cache.isNotEmpty()) {
+            Log.i("App-Repository", "Territory Types retrieved from Cache")
+            territoryTypes = cache.associateBy { it.id }
+        }
+        else{
+            Log.i("App-Repository", "Sending Network request to getTerritoryTypes")
+            val result = banknotesNetworkDataSource.getTerritoryTypes()
+            territoryTypes = result.associateBy { it.id }
+
+            // Write to Cache (Preferences)
+            terTypeCacheRepository.updateTerritoryTypes(result)
+        }
+
     }
 
-    // Use after TerritoryTypes and Continents are fetched
+    // Use after Continents are fetched !!!
     suspend fun fetchTerritories() {
         coroutineScope { launch{fetchFlags()} }
         territories = banknotesNetworkDataSource.getTerritories().filter { ter ->
@@ -370,57 +410,6 @@ class BanknotesCatalogRepository private constructor(
     fun getCurrencies (byContinent : UInt) : List<Currency> {
         return currencies.filter { it.continent.id == byContinent }
     }
-
-    /*
-    fun getTerritoriesDataByType (byTerritoryType: UInt?) : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
-
-        if (byTerritoryType == null)
-            for (ter in territories){
-                tmp.add(territoryToMap(ter))
-            }
-        else
-            for (ter in territories){
-                if (ter.territoryTypeId == byTerritoryType)
-                    tmp.add(territoryToMap(ter))
-            }
-
-        return tmp
-    }
-
-    fun getTerritoriesDataByStart (
-        fromStart : Int?,
-        toStart : Int?
-    ) : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
-
-        for (ter in territories){
-            if (((fromStart == null) || ( ter.start >= fromStart ))
-                && ((toStart == null) || (ter.start <= toStart))
-            ){
-                tmp.add(territoryToMap(ter))
-            }
-        }
-        return tmp
-    }
-
-    fun getTerritoriesDataByEnd (
-        fromEnd : Int?,
-        toEnd : Int?
-    ) : List<Map<String, Any?>> {
-        val tmp  = mutableListOf<Map<String, Any?>>()
-
-        for (ter in territories){
-            if (((fromEnd == null) || (ter.end != null && ter.end >= fromEnd))
-                && ((toEnd == null) || (ter.end != null && ter.end <= toEnd))
-            ){
-                tmp.add(territoryToMap(ter))
-            }
-        }
-        return tmp
-    }
-
-     */
 
     private suspend fun fetchFlags() {
         flags = flagsLocalDataSource.getFlags()

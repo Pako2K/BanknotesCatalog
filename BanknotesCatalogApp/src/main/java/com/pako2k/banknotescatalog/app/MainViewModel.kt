@@ -2,6 +2,8 @@ package com.pako2k.banknotescatalog.app
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
+import com.pako2k.banknotescatalog.data.Continent
+import com.pako2k.banknotescatalog.data.ContinentCache
+import com.pako2k.banknotescatalog.data.ContinentCacheRepository
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.CurrencySummaryStats
@@ -26,6 +31,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -38,7 +48,7 @@ import kotlinx.coroutines.launch
 class MainViewModel private constructor(
         ctx: Context,
         private val repository : BanknotesCatalogRepository,
-        private val userPreferencesRepository: UserPreferencesRepository
+        private val userPreferencesRepository: UserPreferencesRepository,
     ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -52,9 +62,7 @@ class MainViewModel private constructor(
     // Public property to read the UI state
     val initializationState = _mainUiInitializationState.asStateFlow()
 
-    val userPreferencesState : StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow.map { pref ->
-        UserPreferences(pref.favouriteTerritories, pref.favouriteCurrencies, pref.historyTerritories, pref.historyCurrencies )
-    }.stateIn(
+    val userPreferencesState = userPreferencesRepository.userPreferencesFlow.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = UserPreferences()
@@ -63,41 +71,47 @@ class MainViewModel private constructor(
     val continents
         get() = repository.continents
 
-    private var territoriesViewData : List<Territory>
-
-    // returns field values for the Summary Table
-    fun territoriesViewData() : List<List<Any?>> {
-        val uiData : MutableList<List<Any?>> = mutableListOf()
-
-        for(ter in territoriesViewData){
-            val terTypSuffix =
-                if( ter.territoryType.name == TerritoryTypeEnum.Ind.value) ""
-                else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
-            val stats = repository.territoryCatStats.find { it.id == ter.id }
-            uiData.add(
-                listOf(
-                    repository.flags[ter.flagName],
-                    ter.iso3?:"",
-                    Pair(ter.id, ter.name + terTypSuffix),
-                    ter.start.toString(),
-                    ter.end?.toString()?:"",
-                    stats?.numCurrencies.toString(),
-                    "-",
-                    stats?.numSeries.toString(),
-                    "-",
-                    stats?.numDenominations.toString(),
-                    "-",
-                    stats?.numNotes.toString(),
-                    "-",
-                    stats?.numVariants.toString(),
-                    "-",
-                    "-"
+    private var territoriesViewData : List<Territory> = listOf()
+        set(value) {
+            field = value
+            val uiData : MutableList<List<Any?>> = mutableListOf()
+            for(ter in value){
+                val terTypSuffix =
+                    if( ter.territoryType.name == TerritoryTypeEnum.Ind.value) ""
+                    else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
+                val stats = repository.territoryCatStats.find { it.id == ter.id }
+                uiData.add(
+                    listOf(
+                        repository.flags[ter.flagName],
+                        ter.iso3?:"",
+                        Pair(ter.id, ter.name + terTypSuffix),
+                        ter.start.toString(),
+                        ter.end?.toString()?:"",
+                        stats?.numCurrencies.toString(),
+                        "-",
+                        stats?.numSeries.toString(),
+                        "-",
+                        stats?.numDenominations.toString(),
+                        "-",
+                        stats?.numNotes.toString(),
+                        "-",
+                        stats?.numVariants.toString(),
+                        "-",
+                        "-"
+                    )
                 )
-            )
+            }
+            territoriesViewDataUI = uiData
         }
 
-        return uiData
-    }
+    /*
+        Field values for the Summary Table
+        Property automatically set when the territoriesViewData is modified
+    */
+    lateinit var territoriesViewDataUI : List<List<Any?>>
+        private set
+
+
 
     fun territoryViewData(terId : UInt) : Territory? {
         val ter = (repository.territories.find{ it.id == terId })
@@ -105,34 +119,44 @@ class MainViewModel private constructor(
         return ter
     }
 
-    private var currenciesViewData : List<Currency>
-    fun currenciesViewData() : List<List<Any?>> {
-        val uiData : MutableList<List<Any?>> = mutableListOf()
 
-        for(cur in currenciesViewData){
-            val ownedBy = cur.ownedBy.maxBy { it.start }
-            val stats = repository.currencyCatStats.find { it.id == cur.id }
-            uiData.add(
-                listOf(
-                    cur.iso3 ?: "",
-                    Pair(cur.id, cur.name),
-                    Pair(ownedBy.territory.id, ownedBy.territory.name),
-                    cur.startYear.toString(),
-                    cur.endYear?.toString() ?: "",
-                    stats?.numSeries.toString(),
-                    "-",
-                    stats?.numDenominations.toString(),
-                    "-",
-                    stats?.numNotes.toString(),
-                    "-",
-                    stats?.numVariants.toString(),
-                    "-",
-                    "-"
+    private var currenciesViewData : List<Currency> = listOf()
+        set(value) {
+            field = value
+
+            val uiData : MutableList<List<Any?>> = mutableListOf()
+            for(cur in value){
+                val ownedBy = cur.ownedBy.maxBy { it.start }
+                val stats = repository.currencyCatStats.find { it.id == cur.id }
+                uiData.add(
+                    listOf(
+                        cur.iso3 ?: "",
+                        Pair(cur.id, cur.name),
+                        Pair(ownedBy.territory.id, ownedBy.territory.name),
+                        cur.startYear.toString(),
+                        cur.endYear?.toString() ?: "",
+                        stats?.numSeries.toString(),
+                        "-",
+                        stats?.numDenominations.toString(),
+                        "-",
+                        stats?.numNotes.toString(),
+                        "-",
+                        stats?.numVariants.toString(),
+                        "-",
+                        "-"
+                    )
                 )
-            )
+            }
+            currenciesViewDataUI = uiData
         }
-        return uiData
-    }
+
+    /*
+        Field values for the Summary Table
+        Property automatically set when the currenciesViewData is modified
+    */
+    lateinit var currenciesViewDataUI : List<List<Any?>>
+        private set
+
     fun currencyViewData(curId : UInt) : Currency? {
         val cur = (repository.currencies.find{ it.id == curId })
         cur?.extend(territoriesList = repository.territories, flags = repository.flags, currenciesList = repository.currencies)
@@ -166,39 +190,18 @@ class MainViewModel private constructor(
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT MainViewModel")
 
-        territoriesViewData = listOf()
-        currenciesViewData = listOf()
-
         // Initialization in separate coroutines
         val jobs = mutableListOf<Deferred<ComponentState>>()
 
         viewModelScope.async {
-            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getContinents")
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getContinents, getTerritoryTypes and getTerritories")
 
-            // Get Continents and territories
-            val result = try {
+            val result : ComponentState = try {
                 repository.fetchContinents()
                 repository.fetchTerritoryTypes()
-
-                ComponentState.DONE
-            }
-            catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
-                ComponentState.FAILED
-            }
-
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getContinents")
-
-            return@async result
-        }.let { jobs.add(it) }
-
-        viewModelScope.async {
-            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritories")
-
-            // Get Territories
-            val result : ComponentState = try {
                 repository.fetchTerritories()
 
+                // Set the data to be shown in UI
                 territoriesViewData = repository.territories
                 ComponentState.DONE
             }
@@ -207,7 +210,7 @@ class MainViewModel private constructor(
                 ComponentState.FAILED
             }
 
-            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritories with $result")
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getContinents, getTerritoryTypes and getTerritories with $result")
             return@async result
         }.let { jobs.add(it) }
 

@@ -257,7 +257,7 @@ fun MainScreen(
                                 TerritoriesView(
                                     width = screenWidth - 2 * padding,
                                     table = uiState.territoriesTable,
-                                    data = mainViewModel.territoriesViewData(),
+                                    data = mainViewModel.territoriesViewDataUI,
                                     onCountryClick = {
                                         navController.navigate("COUNTRY/$it")
                                     },
@@ -299,7 +299,7 @@ fun MainScreen(
                                 CurrenciesView(
                                     width = screenWidth - 2 * padding,
                                     table = uiState.currenciesTable,
-                                    data = mainViewModel.currenciesViewData(),
+                                    data = mainViewModel.currenciesViewDataUI,
                                     onCurrencyClick = {
                                         navController.navigate("CURRENCY/$it")
                                     },

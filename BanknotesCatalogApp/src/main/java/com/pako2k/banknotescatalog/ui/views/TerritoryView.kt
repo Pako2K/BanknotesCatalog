@@ -48,8 +48,8 @@ import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.ContinentIconMap
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryId
-import com.pako2k.banknotescatalog.data.TerritoryTypeKey
 import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
+import com.pako2k.banknotescatalog.data.TerritoryTypeKey
 import com.pako2k.banknotescatalog.ui.parts.FavouriteIcon
 import com.pako2k.banknotescatalog.ui.parts.NameIso3Text
 import com.pako2k.banknotescatalog.ui.parts.SubviewMenu

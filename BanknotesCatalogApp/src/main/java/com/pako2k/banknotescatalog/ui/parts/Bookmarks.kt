@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -84,7 +84,7 @@ fun Bookmarks (
                             .padding(top = dimensionResource(id = R.dimen.large_padding))
                             .padding(bottom = dimensionResource(id = R.dimen.small_padding))
                     )
-                    Divider(thickness = 2.dp)
+                    HorizontalDivider(thickness = 2.dp)
 
                     if (territories.isEmpty() && currencies.isEmpty())
                         Text("Add your favorites by selecting the Star icon on the right of the Territories and Currencies",
@@ -106,11 +106,11 @@ fun Bookmarks (
                     }
 
                     if (territories.isNotEmpty() && currencies.isNotEmpty())
-                        Divider(
-                            thickness = Dp.Hairline,
+                        HorizontalDivider(
                             modifier = Modifier
                                 .padding(horizontal = dimensionResource(id = R.dimen.large_padding))
-                                .padding(top = dimensionResource(id = R.dimen.medium_padding))
+                                .padding(top = dimensionResource(id = R.dimen.medium_padding)),
+                            thickness = Dp.Hairline
                         )
 
                     if(currencies.isNotEmpty()) {
@@ -132,7 +132,7 @@ fun Bookmarks (
                             .padding(top = dimensionResource(id = R.dimen.large_padding))
                             .padding(bottom = dimensionResource(id = R.dimen.small_padding))
                     )
-                    Divider(thickness = 2.dp)
+                    HorizontalDivider(thickness = 2.dp)
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
                     historyTer.reversed().forEach {
                         LastVisitedItem(
