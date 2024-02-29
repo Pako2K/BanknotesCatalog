@@ -2,8 +2,6 @@ package com.pako2k.banknotescatalog.app
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,9 +9,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
-import com.pako2k.banknotescatalog.data.Continent
-import com.pako2k.banknotescatalog.data.ContinentCache
-import com.pako2k.banknotescatalog.data.ContinentCacheRepository
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.CurrencySortableField
 import com.pako2k.banknotescatalog.data.CurrencySummaryStats
@@ -29,18 +24,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.lastOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 
 
 
