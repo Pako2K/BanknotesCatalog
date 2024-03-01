@@ -407,8 +407,24 @@ class BanknotesCatalogRepository private constructor(
         return result
     }
 
-    fun getCurrencies (byContinent : UInt) : List<Currency> {
-        return currencies.filter { it.continent.id == byContinent }
+    fun getCurrencies (
+        byContinent : UInt?,
+        byType : Pair<Boolean, Boolean>,
+        byState : Pair<Boolean, Boolean>,
+        byFoundedDates: FilterDates,
+        byExtinctDates: FilterDates
+    ) : List<Currency> {
+        var result = currencies
+        if (byContinent != null) result = result.filter { it.continent.id == byContinent }
+        if (!byType.first) result = result.filter { it.sharedBy !=  null }
+        if (!byType.second) result = result.filter { it.sharedBy == null }
+        if (!byState.first) result = result.filter { it.end != null }
+        if (!byState.second) result = result.filter { it.end == null }
+
+        if (byFoundedDates.from != null || byFoundedDates.to != null) result = result.filter { cur -> byFoundedDates.from?.let { cur.startYear >= it }?:true && byFoundedDates.to?.let { cur.startYear <= it }?:true }
+        if (byExtinctDates.from != null || byExtinctDates.to != null) result = result.filter { cur -> byExtinctDates.from?.let { cur.endYear != null && cur.endYear >= it }?:true && byExtinctDates.to?.let { cur.endYear != null && cur.endYear <= it }?:true }
+
+        return result
     }
 
     private suspend fun fetchFlags() {

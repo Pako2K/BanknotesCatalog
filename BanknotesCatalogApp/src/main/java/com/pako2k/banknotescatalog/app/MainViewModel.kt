@@ -318,19 +318,14 @@ class MainViewModel private constructor(
             if (continentId == uiState.value.selectedContinent) null
             else continentId
 
-        currenciesViewData = if (newSelection != null)
-            repository.getCurrencies(newSelection)
-        else
-            repository.currencies
-
-        repository.setStats(newSelection)
-
         _mainUiState.update { currentState ->
             currentState.copy(
                 selectedContinent = newSelection
             )
         }
         filterTerritories()
+        filterCurrencies()
+        repository.setStats(newSelection)
     }
 
     fun sortTerritoriesBy(sortBy : TerritorySortableField, statsCol : StatsSubColumn?) {
@@ -357,7 +352,7 @@ class MainViewModel private constructor(
 
         repository.sortCurrencies(sortBy, statsCol, newSortingDir)
 
-        currenciesViewData = _mainUiState.value.selectedContinent?.let {repository.getCurrencies(it)}?:repository.currencies
+        filterCurrencies()
 
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -451,6 +446,52 @@ class MainViewModel private constructor(
         }
     }
 
+    fun updateFilterCurrencyType(isSelected : Pair<Boolean, Boolean>){
+        // At least one state must be true!!
+        if (!isSelected.first && !isSelected.second) return
+
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterCurrencyTypes = isSelected
+            )
+        }
+        filterCurrencies()
+    }
+
+    fun updateFilterCurrencyState(isSelected : Pair<Boolean, Boolean>){
+        // At least one state must be true!!
+        if (!isSelected.first && !isSelected.second) return
+
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterCurrencyState = isSelected
+            )
+        }
+        filterCurrencies()
+    }
+
+    fun updateFilterCurrencyFoundedDates(dates : FilterDates){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterCurFounded = dates
+            )
+        }
+        if (dates.isValid) {
+            filterCurrencies()
+        }
+    }
+
+    fun updateFilterCurrencyExtinctDates(dates : FilterDates){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                filterCurExtinct = dates
+            )
+        }
+        if (dates.isValid) {
+            filterCurrencies()
+        }
+    }
+
     private fun filterTerritories() {
         val filterTerTypesToList = _mainUiState.value.filterTerritoryTypes.filter { it.value }.keys.toList().let {
             if (it.size == _mainUiState.value.filterTerritoryTypes.size) null else it
@@ -462,6 +503,16 @@ class MainViewModel private constructor(
             _mainUiState.value.filterTerritoryState.second,
             _mainUiState.value.filterTerFounded,
             _mainUiState.value.filterTerExtinct
+        )
+    }
+
+    private fun filterCurrencies() {
+        currenciesViewData = repository.getCurrencies(
+            _mainUiState.value.selectedContinent,
+            _mainUiState.value.filterCurrencyTypes,
+            _mainUiState.value.filterCurrencyState,
+            _mainUiState.value.filterCurFounded,
+            _mainUiState.value.filterCurExtinct
         )
     }
 }

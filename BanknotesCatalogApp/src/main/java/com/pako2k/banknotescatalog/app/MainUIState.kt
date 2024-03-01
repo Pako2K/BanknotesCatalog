@@ -57,7 +57,7 @@ data class MainUiState (
     val currenciesTable : SummaryTable = SummaryTable(
         columns = listOf(
             SummaryTableColumn(title = "", width = 44.dp ),
-            SummaryTableColumn(title = "Name", linkedField = CurrencyFieldName, width = 140.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
+            SummaryTableColumn(title = "Name", linkedField = CurrencyFieldName, width = 115.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
             SummaryTableColumn(title = "Territory", linkedField = CurrencyFieldOwnedBy, width = 160.dp, align = Arrangement.Start, isSortable = true, isClickable = true),
             SummaryTableColumn(title = "Created", linkedField = CurrencyFieldStart, width = 74.dp, isSortable = true),
             SummaryTableColumn(title = "Finished", linkedField = CurrencyFieldEnd, width = 70.dp, isSortable = true),
@@ -81,5 +81,10 @@ data class MainUiState (
     val filterTerritoryTypes : Map<TerritoryTypeEnum, Boolean> = TerritoryTypeEnum.values().associateWith { true },
     val filterTerritoryState : Pair<Boolean,Boolean> = Pair(true,true),
     val filterTerFounded : FilterDates = FilterDates(null,null),
-    val filterTerExtinct : FilterDates = FilterDates(null,null)
+    val filterTerExtinct : FilterDates = FilterDates(null,null),
+
+    val filterCurrencyTypes : Pair<Boolean,Boolean> = Pair(true,true),
+    val filterCurrencyState : Pair<Boolean,Boolean> = Pair(true,true),
+    val filterCurFounded : FilterDates = FilterDates(null,null),
+    val filterCurExtinct : FilterDates = FilterDates(null,null)
 )

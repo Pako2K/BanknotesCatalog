@@ -52,6 +52,7 @@ import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
+import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
@@ -108,16 +109,25 @@ fun MainScreen(
     val bookmarksState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+
+    val hasFilter = when(mainMenuOption){
+        MenuOption.COUNTRIES -> (uiState.filterTerritoryState != Pair(true,true) ||
+                uiState.filterTerritoryTypes.containsValue(false) ||
+                (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
+                (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null)))
+        MenuOption.CURRENCIES -> (uiState.filterCurrencyTypes != Pair(true,true) ||
+                uiState.filterCurrencyState != Pair(true,true) ||
+                (uiState.filterCurFounded.isValid && (uiState.filterCurFounded.from != null || uiState.filterCurFounded.to != null)) ||
+                (uiState.filterCurExtinct.isValid && (uiState.filterCurExtinct.from != null || uiState.filterCurExtinct.to != null)))
+        else -> false
+    }
+
     // Screen content
     Scaffold(
         topBar = {
             Header(
                 isMenuEnabled = mainMenuOption!=null && mainMenuOption!=MenuOption.LOG_IN,
-                hasFilter = mainMenuOption == MenuOption.COUNTRIES &&
-                        (uiState.filterTerritoryState != Pair(true,true) ||
-                        uiState.filterTerritoryTypes.containsValue(false) ||
-                        (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
-                        (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null))),
+                hasFilter = hasFilter,
                 onMenuClicked = { scope.launch {
                     bookmarksState.apply { close() }
                     headerMenuState.apply { if(isOpen) close() else open() }
@@ -162,14 +172,14 @@ fun MainScreen(
                 scope.launch { headerMenuState.apply { close() } }
                 if (mainMenuOption == MenuOption.COUNTRIES)
                     mainViewModel.showTerritoryFilters(true)
-                else
+                if (mainMenuOption == MenuOption.CURRENCIES)
                     mainViewModel.showCurrencyFilters(true)
             },
             onClickStats = {
                 scope.launch { headerMenuState.apply { close() } }
                 if (mainMenuOption == MenuOption.COUNTRIES)
                     mainViewModel.showTerritoryStats(true)
-                else
+                if (mainMenuOption == MenuOption.CURRENCIES)
                     mainViewModel.showCurrencyStats(true)
             },
             onClickSettings = {
@@ -282,6 +292,7 @@ fun MainScreen(
                             if (uiState.showCurrencyStats) {
                                 CurrencyStatsUI(
                                     data = mainViewModel.getCurrencyStats(),
+                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
                                     isLoggedIn = uiState.userLoggedIn,
                                     onClose = {
                                         mainViewModel.showCurrencyStats(false)
@@ -290,9 +301,17 @@ fun MainScreen(
                                 Spacer(modifier = Modifier.height(padding))
                             }
                             if (uiState.showCurrencyFilters) {
-                               // CurrencyFiltersUI {
-                               //     mainViewModel.showTerritoryFilters(false)
-                               // }
+                                CurrencyFiltersUI (
+                                    curTypeFilters = uiState.filterCurrencyTypes,
+                                    curStateFilters = uiState.filterCurrencyState,
+                                    curFoundedFilter = uiState.filterCurFounded,
+                                    curExtinctFilter = uiState.filterCurExtinct,
+                                    onCurTypeChanged = {mainViewModel.updateFilterCurrencyType(it)},
+                                    onCurStateChanged = {mainViewModel.updateFilterCurrencyState(it)},
+                                    onCurFoundedChanged = {mainViewModel.updateFilterCurrencyFoundedDates(it)},
+                                    onCurExtinctChanged = {mainViewModel.updateFilterCurrencyExtinctDates(it)},
+                                    onClose = {mainViewModel.showCurrencyFilters(false)}
+                                )
                                 Spacer(modifier = Modifier.height(padding))
                             }
                             if ((!uiState.showCurrencyStats && !uiState.showCurrencyFilters) || windowSize.heightSizeClass != WindowHeightSizeClass.Compact)
