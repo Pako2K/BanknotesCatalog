@@ -33,7 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -45,7 +44,6 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.MainViewModel
 import com.pako2k.banknotescatalog.ui.parts.Bookmarks
-import com.pako2k.banknotescatalog.ui.parts.CommonCard
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
 import com.pako2k.banknotescatalog.ui.parts.FrontPage
 import com.pako2k.banknotescatalog.ui.parts.Header
