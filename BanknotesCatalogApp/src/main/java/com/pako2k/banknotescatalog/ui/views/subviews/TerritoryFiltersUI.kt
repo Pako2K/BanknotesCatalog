@@ -86,12 +86,6 @@ private fun CheckGroupsFilter(
     onTerTypeChanged : (TerritoryTypeEnum, Boolean) -> Unit,
     onTerStateChanged : (Pair<Boolean, Boolean>) -> Unit,
 ){
-    val setup : @Composable (@Composable (() -> Unit))-> Unit = if (horizontalAlignment) {
-        { Row {it()} }
-    } else {
-        { Column{it()}}
-    }
-
     val optionsArray = terTypeFilters.map{
         CheckOption(
             title = it.key.value,
@@ -100,11 +94,19 @@ private fun CheckGroupsFilter(
         )
     }.toTypedArray()
 
-    val spacerModifier =
-        if (horizontalAlignment) Modifier.width(dimensionResource(id = R.dimen.large_padding))
-        else Modifier.height(dimensionResource(id = R.dimen.large_padding))
-
-    val groupModifier = if (horizontalAlignment) Modifier else Modifier.fillMaxWidth()
+    val setup : @Composable (@Composable (() -> Unit))-> Unit
+    val spacerModifier : Modifier
+    val groupModifier : Modifier
+    if (horizontalAlignment){
+        setup = { Row {it()} }
+        spacerModifier = Modifier.width(dimensionResource(id = R.dimen.large_padding))
+        groupModifier = Modifier
+    }
+    else{
+        setup = { Column{it()}}
+        spacerModifier = Modifier.height(dimensionResource(id = R.dimen.large_padding))
+        groupModifier = Modifier.fillMaxWidth()
+    }
 
     setup {
         CheckButtonGroup(

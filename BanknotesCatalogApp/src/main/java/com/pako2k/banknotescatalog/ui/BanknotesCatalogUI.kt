@@ -21,7 +21,10 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -30,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -41,6 +45,7 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.MainViewModel
 import com.pako2k.banknotescatalog.ui.parts.Bookmarks
+import com.pako2k.banknotescatalog.ui.parts.CommonCard
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
 import com.pako2k.banknotescatalog.ui.parts.FrontPage
 import com.pako2k.banknotescatalog.ui.parts.Header
@@ -54,6 +59,7 @@ import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
+import com.pako2k.banknotescatalog.ui.views.subviews.SettingsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
@@ -92,6 +98,8 @@ fun MainScreen(
     // userPreferences as state, to trigger recompositions
     val userPreferences by mainViewModel.userPreferencesState.collectAsState()
 
+    val showPreferences by mainViewModel.showPreferencesState.collectAsState()
+
     // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
 
@@ -108,6 +116,19 @@ fun MainScreen(
     val headerMenuState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bookmarksState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+
+    if (showSettings){
+         SettingsUI(
+             options = showPreferences,
+             onClick = {
+                       pref, value -> mainViewModel.updateSettings(pref, value)
+                       },
+             onClose = {
+                 showSettings = false
+             })
+    }
 
 
     val hasFilter = when(mainMenuOption){
@@ -184,6 +205,7 @@ fun MainScreen(
             },
             onClickSettings = {
                 scope.launch { headerMenuState.apply { close() } }
+                showSettings = true
             },
         ) {
             Bookmarks(

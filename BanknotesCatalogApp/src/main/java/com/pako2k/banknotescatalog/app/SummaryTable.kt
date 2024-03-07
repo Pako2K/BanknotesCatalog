@@ -23,6 +23,7 @@ data class SummaryTableColumn(
 ){
     var sortedDirection : SortDirection? = null
     var sortedStats : StatsSubColumn? = null
+    var isVisible: Boolean  = true
 }
 
 
@@ -81,4 +82,10 @@ class SummaryTable(
         return if (index != -1) index
         else null
     }
+
+    fun showCol(linkedField : SortableField, show : Boolean){
+        val index = columns.indexOfFirst { it.linkedField == linkedField }
+        if (index != -1 ) columns[index].isVisible = show
+    }
+    
 }

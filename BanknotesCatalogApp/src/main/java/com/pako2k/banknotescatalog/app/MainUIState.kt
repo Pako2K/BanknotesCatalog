@@ -32,7 +32,7 @@ data class MainUiState (
 
     val userLoggedIn : Boolean = false,
 
-    val summaryTableSortingFlag : Boolean = false,
+    val summaryTableTriggerUpdateFlag : Boolean = false,
 
     // Summary tables (updated when sorting is changed)
     val territoriesTable : SummaryTable = SummaryTable(

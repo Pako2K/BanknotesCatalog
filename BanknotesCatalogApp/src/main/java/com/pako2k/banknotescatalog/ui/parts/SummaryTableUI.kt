@@ -67,7 +67,6 @@ import com.pako2k.banknotescatalog.ui.theme.typographySans
 // Non Composable Constants
 private const val INACTIVE_SORT_ICON_ALPHA = 0.3f
 private const val DISABLED_HEADER_BUTTON_ALPHA = 0.5f
-private const val COMPACT_WIDTH = 440
 
 
 @Composable
@@ -82,7 +81,7 @@ fun SummaryTableUI(
     val hScrollState = rememberScrollState()
     val columns = table.columns
 
-    val totalWidth = (columns.sumOf { if(it.isStats) 2 * it.width.value.toDouble() else it.width.value.toDouble() }).toFloat()
+    val totalWidth = (columns.filter { it.isVisible }.sumOf { if(it.isStats) 2 * it.width.value.toDouble() else it.width.value.toDouble() }).toFloat()
 
     val fixedColumnsList : List<SummaryTableColumn>
     val scrollColumnsList : List<SummaryTableColumn>?
@@ -95,7 +94,6 @@ fun SummaryTableUI(
         scrollColumnsList = null
     }
 
-    val isCompact = availableWidth < COMPACT_WIDTH.dp
 
     // Box used to draw the double arrow scroll button
     Box(
@@ -107,7 +105,6 @@ fun SummaryTableUI(
                 fixedColumns = fixedColumnsList,
                 scrollableColumns = scrollColumnsList,
                 isLogged = isLogged,
-                isCompactWidth = isCompact,
                 horizontalScroll = hScrollState,
                 onClick = onHeaderClick
             )
@@ -117,7 +114,6 @@ fun SummaryTableUI(
                 fixedColumns = fixedColumnsList,
                 scrollableColumns = scrollColumnsList,
                 data = data,
-                isCompactWidth = isCompact,
                 horizontalScroll = hScrollState,
                 onClick = onDataClick
             )
@@ -134,7 +130,6 @@ private fun SummaryTableHeader(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     isLogged : Boolean = false,
-    isCompactWidth : Boolean,
     horizontalScroll : ScrollState,
     onClick: (Int, StatsSubColumn?) -> Unit
 ){
@@ -151,7 +146,7 @@ private fun SummaryTableHeader(
     ) {
         // Fixed Columns
         fixedColumns.forEachIndexed{ index, col ->
-            if (!isCompactWidth || col.title.isNotEmpty())
+            if (col.isVisible && (scrollableColumns == null || col.title.isNotEmpty()))
                 HeaderColumn(index, col, isLogged, onClick = onClick)
         }
 
@@ -165,9 +160,10 @@ private fun SummaryTableHeader(
                     .horizontalScroll(horizontalScroll)
             ) {
                 scrollableColumns.forEachIndexed { index, col ->
-                    if (col.isStats && !scrollableColumns[index-1].isStats)
+                    if (col.isStats && !scrollableColumns[index - 1].isStats)
                         BorderDivider(R.color.header_border_color)
-                    HeaderColumn(fixedColumns.size + index, col, isLogged, onClick = onClick)
+                    if (col.isVisible)
+                        HeaderColumn(fixedColumns.size + index, col, isLogged, onClick = onClick)
                 }
             }
         }
@@ -329,7 +325,6 @@ private fun SummaryTableData(
     fixedColumns: List<SummaryTableColumn>,
     scrollableColumns : List<SummaryTableColumn>?,
     data : List<List<Any?>>,
-    isCompactWidth : Boolean,
     horizontalScroll : ScrollState,
     onClick:  (colIndex: Int, dataId : UInt) -> Unit
 ){
@@ -367,7 +362,7 @@ private fun SummaryTableData(
                     data = item,
                     firstDataIndex = 0,
                     hasMoreColumns = scrollableColumns != null,
-                    isCompactWidth = isCompactWidth,
+                    isCompactWidth = scrollableColumns != null,
                     onClick = onClick
                 )
             }
@@ -387,7 +382,7 @@ private fun SummaryTableData(
                         data = item,
                         firstDataIndex = scrollableDataIndex,
                         hasMoreColumns = false,
-                        isCompactWidth = isCompactWidth,
+                        isCompactWidth = true,
                         onClick = onClick
                     )
                 }
@@ -431,15 +426,18 @@ private fun DataRow(
                         if (col.isStats && !columns[colIndex - 1].isStats) {
                             BorderDivider(R.color.data_border_color)
                         }
-                        TextDataCell(col, value.toString())
+                        if (col.isVisible)
+                            TextDataCell(col, value.toString())
                     }
                 }
             }
 
             if (col.isStats){
                 dataIndex++
-                TextDataCell(col, data[dataIndex] as String)
-                BorderDivider(R.color.data_border_color)
+                if (col.isVisible) {
+                    TextDataCell(col, data[dataIndex] as String)
+                    BorderDivider(R.color.data_border_color)
+                }
             }
             dataIndex++
         }
