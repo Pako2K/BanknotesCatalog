@@ -1,6 +1,5 @@
 package com.pako2k.banknotescatalog.ui.parts
 
-import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import androidx.annotation.ColorRes
 import androidx.compose.foundation.Image
@@ -19,12 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -318,8 +315,6 @@ private fun SortIcon(dir : SortDirection, inactive : Boolean){
     )
 }
 
-
-@SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 private fun SummaryTableData(
     fixedColumns: List<SummaryTableColumn>,
@@ -327,35 +322,10 @@ private fun SummaryTableData(
     data : List<List<Any?>>,
     horizontalScroll : ScrollState,
     onClick:  (colIndex: Int, dataId : UInt) -> Unit
-){
-    val vertScrollState1 = rememberLazyListState()
-    val vertScrollState2 = rememberLazyListState()
-
-    if (scrollableColumns != null) {
-        LaunchedEffect(vertScrollState1.firstVisibleItemScrollOffset) {
-            vertScrollState2.scrollToItem(
-                vertScrollState1.firstVisibleItemIndex,
-                vertScrollState1.firstVisibleItemScrollOffset
-            )
-        }
-        LaunchedEffect(vertScrollState2.firstVisibleItemScrollOffset) {
-            vertScrollState1.scrollToItem(
-                vertScrollState2.firstVisibleItemIndex,
-                vertScrollState2.firstVisibleItemScrollOffset
-            )
-        }
-    }
-
-    // Column index of the data row
-    // (it does not match the column index of the header because of possible Stats columns in the fixed columns
-    val scrollableDataIndex = fixedColumns.count{ it.isStats } + fixedColumns.size
-
-    Row {
-        // Fixed Columns
-        LazyColumn(
-            state = vertScrollState1
-        ) {
-            itemsIndexed(items = data) { index, item ->
+) {
+    LazyColumn {
+        itemsIndexed(items = data) {index, item ->
+            Row {
                 DataRow(
                     isEven = index % 2 == 0,
                     columns = fixedColumns,
@@ -365,34 +335,26 @@ private fun SummaryTableData(
                     isCompactWidth = scrollableColumns != null,
                     onClick = onClick
                 )
-            }
-        }
-
-        if (scrollableColumns != null) {
-            // Horizontal scrollable columns
-            LazyColumn(
-                state = vertScrollState2,
-                modifier = Modifier
-                    .horizontalScroll(horizontalScroll)
-            ) {
-                itemsIndexed(items = data) { index, item ->
+                if (scrollableColumns != null)
                     DataRow(
+                        modifier =Modifier.horizontalScroll(horizontalScroll),
                         isEven = index % 2 == 0,
                         columns = scrollableColumns,
                         data = item,
-                        firstDataIndex = scrollableDataIndex,
+                        firstDataIndex = fixedColumns.count { it.isStats } + fixedColumns.size,
                         hasMoreColumns = false,
                         isCompactWidth = true,
                         onClick = onClick
                     )
-                }
             }
         }
     }
 }
 
+
 @Composable
 private fun DataRow(
+    modifier : Modifier = Modifier,
     isEven : Boolean,
     columns: List<SummaryTableColumn>,
     data : List<Any?>,
@@ -404,7 +366,7 @@ private fun DataRow(
     var dataIndex = firstDataIndex
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .background(if (isEven) color_table_row_odd else color_table_row_even)
             .height(IntrinsicSize.Min)
      ) {
@@ -538,7 +500,7 @@ private fun BorderDivider(@ColorRes color : Int) {
 
 
 private const val TEST_WIDTH = 380
-private const val TEST_HEIGHT = 800
+private const val TEST_HEIGHT = 300
 
 private const val STATS_COL_WIDTH = 52
 
@@ -551,7 +513,7 @@ private val summaryTablePreview = SummaryTable(
         SummaryTableColumn(title = "Extinct", linkedField = TerritoryFieldEnd, width = 70.dp, isSortable = true),
         SummaryTableColumn(title = "Currencies", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
         SummaryTableColumn(title = "Issues", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
-        SummaryTableColumn(title = "Denomin.", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
+        SummaryTableColumn(title = "Face Value", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
         SummaryTableColumn(title = "Note Types", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
         SummaryTableColumn(title = "Variants", isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
         SummaryTableColumn(title = "Price", width = 80.dp, isSortable = true)
@@ -567,11 +529,15 @@ private val dataPreview = listOf<MutableList<Any?>>(
     mutableListOf(null, "LAO", Pair(2u,"Laos"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
     mutableListOf(null, "LAO", Pair(2u,"Laos"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
     mutableListOf(null, "", Pair(9u,"Algeria [T]"), "276", "","1","-","1","-","1","-","1","-","1","-","-"),
-    mutableListOf(null, "", Pair(29u,"Algeria [T]"), "276", "","9","-","11","-","10","-","122","-","1222","-","-")
+    mutableListOf(null, "", Pair(29u,"Algeria [T]"), "276", "","9","-","11","-","10","-","122","-","1222","-","-"),
+    mutableListOf(null, "LAO", Pair(244u,"Laos3"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "LAO", Pair(233u,"Laos4"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "LAO", Pair(222u,"Laos5"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
+    mutableListOf(null, "LAO", Pair(211u,"Laos6"), "1976", "","1","-","1","-","1","-","1","-","1","-","-"),
 )
 
 
-@Preview(device = "spec:width=${TEST_WIDTH}dp,height=${TEST_HEIGHT}dp,orientation=portrait")
+@Preview(heightDp = TEST_HEIGHT)//(device = "spec:width=${TEST_WIDTH}dp,height=${TEST_HEIGHT}dp,orientation=portrait")
 @Composable
 fun SummaryTablePreviewPortrait() {
     val flag = LocalContext.current.assets.open("usa.png").let {
