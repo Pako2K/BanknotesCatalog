@@ -49,6 +49,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
+private const val MAX_RETRIES = 2
+
 
 // Class implementing the Application Logic
 class MainViewModel private constructor(
@@ -209,19 +211,24 @@ class MainViewModel private constructor(
 
         viewModelScope.async {
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getContinents, getTerritoryTypes and getTerritories")
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchContinents()
+                    repository.fetchTerritoryTypes()
+                    repository.fetchTerritories()
 
-            val result : ComponentState = try {
-                repository.fetchContinents()
-                repository.fetchTerritoryTypes()
-                repository.fetchTerritories()
+                    // Set the data to be shown in UI
+                    territoriesViewData = repository.territories
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
 
-                // Set the data to be shown in UI
-                territoriesViewData = repository.territories
-                ComponentState.DONE
-            }
-            catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
-                ComponentState.FAILED
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    ComponentState.FAILED
+                }
             }
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getContinents, getTerritoryTypes and getTerritories with $result")
@@ -232,13 +239,18 @@ class MainViewModel private constructor(
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getTerritoryStats")
 
             // Get Territory Stats
-            val result : ComponentState = try {
-                repository.fetchTerritoryStats()
-                ComponentState.DONE
-            }
-            catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
-                ComponentState.FAILED
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchTerritoryStats()
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    ComponentState.FAILED
+                }
             }
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getTerritoryStats with $result")
@@ -249,15 +261,20 @@ class MainViewModel private constructor(
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getCurrencies")
 
             // Get Currencies
-            val result : ComponentState = try {
-                repository.fetchCurrencies()
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchCurrencies()
 
-                currenciesViewData = repository.currencies
-                ComponentState.DONE
-            }
-            catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.message + exc.stackTrace.toString())
-                ComponentState.FAILED
+                    currenciesViewData = repository.currencies
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    ComponentState.FAILED
+                }
             }
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencies with $result")
@@ -268,13 +285,18 @@ class MainViewModel private constructor(
             Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getCurrencyStats")
 
             // Get Currency Stats
-            val result : ComponentState = try {
-                repository.fetchCurrencyStats()
-                ComponentState.DONE
-            }
-            catch (exc : Exception){
-                Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
-                ComponentState.FAILED
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchCurrencyStats()
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    ComponentState.FAILED
+                }
             }
 
             Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getCurrencyStats with $result")
@@ -334,6 +356,7 @@ class MainViewModel private constructor(
 
         Log.d(ctx.getString(R.string.app_log_tag), "End INIT MainViewModel")
     }
+
 
     fun updateFavouriteTer(id : UInt){
         viewModelScope.launch {
