@@ -50,8 +50,7 @@ enum class MenuOption (@StringRes val textId : Int, @DrawableRes val iconId : In
 
 @Composable
 fun MainMenu(
-    modifier: Modifier = Modifier,
-    windowSize : WindowSizeClass,
+    windowWidth : WindowWidthSizeClass,
     selectedOption : MenuOption? = null,
     isLoggedIn : Boolean,
     onClick: (clickedOption : MenuOption) -> Unit
@@ -76,12 +75,12 @@ fun MainMenu(
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.onPrimary)
                 .padding(vertical = dimensionResource(id = R.dimen.small_padding))
         ) {
-            val isNarrowScreen = windowSize.widthSizeClass == WindowWidthSizeClass.Compact
+            val isNarrowScreen = windowWidth == WindowWidthSizeClass.Compact
             for (option in MenuOption.values().dropLast(2)){
                 MainMenuOption(
                     option = option,
@@ -178,7 +177,7 @@ fun MainMenuPreview() {
     BanknotesCatalogTheme {
         MainMenu(isLoggedIn = false,
             selectedOption = MenuOption.COUNTRIES,
-            windowSize = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,400.dp)),
+            windowWidth = WindowSizeClass.calculateFromSize(size = DpSize(TEST_WIDTH.dp,400.dp)).widthSizeClass,
             onClick = {})
     }
 }

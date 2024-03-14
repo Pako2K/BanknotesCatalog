@@ -1,7 +1,6 @@
 package com.pako2k.banknotescatalog
 
 import android.os.Bundle
-import android.util.DisplayMetrics
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,7 +12,6 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pako2k.banknotescatalog.app.MainViewModel
 import com.pako2k.banknotescatalog.ui.BanknotesCatalogUI
@@ -32,9 +30,6 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 val windowSizeClass : WindowSizeClass = calculateWindowSizeClass(this)
 
-                val displayMetrics: DisplayMetrics = applicationContext.resources.displayMetrics
-                val screenWidth = Dp(displayMetrics.widthPixels / displayMetrics.density)
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -43,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
                     // Create the application ViewModel using the factory
                     val model: MainViewModel =  viewModel(factory = MainViewModel.Factory)
-                    BanknotesCatalogUI(windowSizeClass, screenWidth, model)
+                    BanknotesCatalogUI(windowSizeClass, model)
                 }
             }
         }

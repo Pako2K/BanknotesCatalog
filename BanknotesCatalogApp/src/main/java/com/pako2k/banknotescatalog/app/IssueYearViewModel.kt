@@ -199,4 +199,22 @@ class IssueYearViewModel private constructor(
         }
     }
 
+    fun showFilters(visible: Boolean){
+        _issueYearUIState.update { currentState ->
+            currentState.copy(
+                showIssueYearFilters = visible,
+                showIssueYearStats = false
+            )
+        }
+    }
+
+    fun showStats(visible: Boolean){
+        _issueYearUIState.update { currentState ->
+            currentState.copy(
+                showIssueYearStats = visible,
+                showIssueYearFilters = false
+            )
+        }
+    }
+
 }

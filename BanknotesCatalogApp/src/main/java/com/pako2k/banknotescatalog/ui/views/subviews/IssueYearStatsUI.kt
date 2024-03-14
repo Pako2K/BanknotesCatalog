@@ -14,8 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -24,7 +22,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.app.IssueYearViewModel
+import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.stats.IssueYearSummaryStats
 import com.pako2k.banknotescatalog.ui.parts.CommonCard
 import com.pako2k.banknotescatalog.ui.parts.StatsTableData
@@ -33,21 +31,19 @@ import com.pako2k.banknotescatalog.ui.parts.StatsTableHeader
 
 @Composable
 fun IssueYearStatsUI(
-    viewModel : IssueYearViewModel,
+    issueYearDateFilter : FilterDates,
     continentName : String?,
-    isLoggedIn : Boolean,
+    data : IssueYearSummaryStats,
+    isLogged : Boolean,
     onClose : () -> Unit
 ){
-    // initializationState as state, to trigger recompositions of the whole UI
-    val uiState by viewModel.issueYearUIState.collectAsState()
-
     var suffix = if(continentName != null) " - $continentName" else ""
-    suffix += if (uiState.filterAppliedIssueYear.from != null && uiState.filterAppliedIssueYear.to != null)
-        " (${uiState.filterAppliedIssueYear.from} - ${uiState.filterAppliedIssueYear.to})"
-    else if (uiState.filterAppliedIssueYear.from != null)
-        " (from ${uiState.filterAppliedIssueYear.from})"
-    else if (uiState.filterAppliedIssueYear.to != null)
-        " (until ${uiState.filterAppliedIssueYear.to})"
+    suffix += if (issueYearDateFilter.from != null && issueYearDateFilter.to != null)
+        " (${issueYearDateFilter.from} - ${issueYearDateFilter.to})"
+    else if (issueYearDateFilter.from != null)
+        " (from ${issueYearDateFilter.from})"
+    else if (issueYearDateFilter.to != null)
+        " (until ${issueYearDateFilter.to})"
     else
         ""
 
@@ -59,7 +55,7 @@ fun IssueYearStatsUI(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-            StatsTable(viewModel.issueYearSummaryStats, isLoggedIn)
+            StatsTable(data, isLogged)
         }
     }
 }
@@ -68,7 +64,7 @@ fun IssueYearStatsUI(
 @Composable
 private fun StatsTable(
     data : IssueYearSummaryStats,
-    isLoggedIn : Boolean
+    isLogged : Boolean
 ){
     // Initial box just for the shadow
     Box(
@@ -91,8 +87,8 @@ private fun StatsTable(
                     modifier = Modifier
                         .width(IntrinsicSize.Max)
                 ) {
-                    StatsTableHeader("Total", setOf("Catalog","Collec."),isLoggedIn)
-                    StatsTableData(0, listOf(data.total.total,data.total.collection), isLoggedIn)
+                    StatsTableHeader("Total", setOf("Catalog","Collec."),isLogged)
+                    StatsTableData(0, listOf(data.total.total,data.total.collection), isLogged)
                 }
             }
         }

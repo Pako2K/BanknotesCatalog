@@ -30,6 +30,9 @@ data class IssueYearUIState(
         minFixedColumns = 1
     ),
 
+    val showIssueYearStats: Boolean = false,
+    val showIssueYearFilters: Boolean = false,
+
     val yearsTableUpdateTrigger : Boolean = false,
 
     val filterShownIssueYear : FilterDates = FilterDates(null,null),

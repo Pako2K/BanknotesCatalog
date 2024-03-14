@@ -533,15 +533,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun showIssueYearStats(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showIssueYearStats = visible,
-                showIssueYearFilters = false
-            )
-        }
-    }
-
     fun showTerritoryFilters(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -565,15 +556,6 @@ class MainViewModel private constructor(
             currentState.copy(
                 showDenominationFilters = visible,
                 showDenominationStats = false
-            )
-        }
-    }
-
-    fun showIssueYearFilters(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showIssueYearFilters = visible,
-                showIssueYearStats = false
             )
         }
     }
