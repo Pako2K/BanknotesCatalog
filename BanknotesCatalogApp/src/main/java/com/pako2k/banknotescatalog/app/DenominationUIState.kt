@@ -29,6 +29,9 @@ data class DenominationUIState(
         minFixedColumns = 1
     ),
 
+    val showStats: Boolean = false,
+    val showFilters: Boolean = false,
+
     val denominationsTableUpdateTrigger : Boolean = false,
 
     val filterShownIssueYear : FilterDates = FilterDates(null,null),

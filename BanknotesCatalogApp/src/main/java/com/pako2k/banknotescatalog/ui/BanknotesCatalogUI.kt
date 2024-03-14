@@ -62,8 +62,6 @@ import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
-import com.pako2k.banknotescatalog.ui.views.subviews.DenominationFiltersUI
-import com.pako2k.banknotescatalog.ui.views.subviews.DenominationStatsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
@@ -218,7 +216,7 @@ fun MainScreen(
                     MenuOption.CURRENCIES ->
                         mainViewModel.showCurrencyFilters(true)
                     MenuOption.DENOMINATIONS ->
-                        mainViewModel.showDenominationFilters(true)
+                        denominationViewModel.showFilters(true)
                     MenuOption.YEARS ->
                         issueYearViewModel.showFilters(true)
                     else -> Unit
@@ -232,7 +230,7 @@ fun MainScreen(
                     MenuOption.CURRENCIES ->
                         mainViewModel.showCurrencyStats(true)
                     MenuOption.DENOMINATIONS ->
-                        mainViewModel.showDenominationStats(true)
+                        denominationViewModel.showStats(true)
                     MenuOption.YEARS ->
                         issueYearViewModel.showStats(true)
                     else -> Unit
@@ -387,39 +385,12 @@ fun MainScreen(
                         }
                     }
                     composable(MenuOption.DENOMINATIONS.name) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .background(color = MaterialTheme.colorScheme.surface)
-                                .fillMaxWidth()
-                                .padding(padding)
-                        ) {
-                            if (uiState.showDenominationStats) {
-                                DenominationStatsUI(
-                                    viewModel = denominationViewModel,
-                                    data = denominationViewModel.getDenominationStats(),
-                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
-                                    isLoggedIn = uiState.userLoggedIn,
-                                    onClose = {
-                                        mainViewModel.showDenominationStats(false)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(padding))
-                            }
-                            if (uiState.showDenominationFilters) {
-                                DenominationFiltersUI (
-                                    viewModel = denominationViewModel,
-                                    selectedContinent = uiState.selectedContinent,
-                                    onClose = {mainViewModel.showDenominationFilters(false)}
-                                )
-                                Spacer(modifier = Modifier.height(padding))
-                            }
-                            DenominationsView(
-                                viewModel = denominationViewModel,
-                                selectedContinent = uiState.selectedContinent,
-                                width = screenWidth - 2 * padding
-                            )
-                        }
+                        DenominationsView(
+                            viewModel = denominationViewModel,
+                            isLogged = uiState.userLoggedIn,
+                            selectedContinent = uiState.selectedContinent?.let { mainViewModel.continents[it] },
+                            width = screenWidth - 2 * padding
+                        )
                     }
                     composable(MenuOption.YEARS.name) {
                         IssueYearsView(

@@ -14,8 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -24,9 +22,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.app.DenominationViewModel
+import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.stats.DenominationSummaryStats
 import com.pako2k.banknotescatalog.ui.common.rightBorder
 import com.pako2k.banknotescatalog.ui.parts.CommonCard
@@ -38,25 +35,21 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 @Composable
 fun DenominationStatsUI(
-    viewModel: DenominationViewModel,
-    data : DenominationSummaryStats,
+    denominationDateFilter : FilterDates,
     continentName : String?,
-    isLoggedIn : Boolean,
+    data : DenominationSummaryStats,
+    isLogged : Boolean,
     onClose : () -> Unit
 ){
-    // initializationState as state, to trigger recompositions of the whole UI
-    val uiState by viewModel.denominationUIState.collectAsState()
-
     var suffix = if(continentName != null) " - $continentName" else ""
-    suffix += if (uiState.filterAppliedIssueYear.from != null && uiState.filterAppliedIssueYear.to != null)
-        " (${uiState.filterAppliedIssueYear.from} - ${uiState.filterAppliedIssueYear.to})"
-    else if (uiState.filterAppliedIssueYear.from != null)
-        " (from ${uiState.filterAppliedIssueYear.from})"
-    else if (uiState.filterAppliedIssueYear.to != null)
-        " (until ${uiState.filterAppliedIssueYear.to})"
+    suffix += if (denominationDateFilter.from != null && denominationDateFilter.to != null)
+        " (${denominationDateFilter.from} - ${denominationDateFilter.to})"
+    else if (denominationDateFilter.from != null)
+        " (from ${denominationDateFilter.from})"
+    else if (denominationDateFilter.to != null)
+        " (until ${denominationDateFilter.to})"
     else
         ""
-
 
     CommonCard(
         title = "Denominations $suffix",
@@ -66,7 +59,7 @@ fun DenominationStatsUI(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-            StatsTable(data, isLoggedIn)
+            StatsTable(data, isLogged)
         }
     }
 }
@@ -144,7 +137,7 @@ private val testData1 = DenominationSummaryStats(
 @Composable
 private fun DenominationStatsUIPreviewPortrait() {
     BanknotesCatalogTheme {
-        DenominationStatsUI (viewModel(factory = DenominationViewModel.Factory), testData1, "Africa", isLoggedIn = true) { }
+        DenominationStatsUI (FilterDates(null, null), "Africa", testData1, isLogged = true) { }
     }
 }
 
@@ -153,7 +146,7 @@ private fun DenominationStatsUIPreviewPortrait() {
 private fun DenominationStatsUIPreviewLandscape() {
     BanknotesCatalogTheme {
         Surface {
-            DenominationStatsUI (viewModel(factory = DenominationViewModel.Factory), testData1, null, isLoggedIn = false) { }
+            DenominationStatsUI (FilterDates(null, null), "Africa", testData1, isLogged = true) { }
         }
     }
 }

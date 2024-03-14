@@ -36,13 +36,14 @@ fun IssueYearsView(
 
     // initializationState as state, to trigger recompositions of the whole UI
     val uiState by viewModel.issueYearUIState.collectAsState()
+    val padding = dimensionResource(id = R.dimen.small_padding)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(color = MaterialTheme.colorScheme.surface)
             .fillMaxWidth()
-            .padding(dimensionResource(id = R.dimen.small_padding))
+            .padding(padding)
     ) {
 
         if (uiState.showIssueYearStats) {
@@ -55,7 +56,7 @@ fun IssueYearsView(
                     viewModel.showStats(false)
                 }
             )
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
+            Spacer(modifier = Modifier.height(padding))
         }
         if (uiState.showIssueYearFilters) {
             IssueYearFiltersUI(
@@ -65,7 +66,7 @@ fun IssueYearsView(
                 },
                 onClose = { viewModel.showFilters(false) }
             )
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.small_padding)))
+            Spacer(modifier = Modifier.height(padding))
         }
 
         SummaryTableUI(

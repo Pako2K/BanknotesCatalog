@@ -524,15 +524,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun showDenominationStats(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showDenominationStats = visible,
-                showDenominationFilters = false
-            )
-        }
-    }
-
     fun showTerritoryFilters(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -547,15 +538,6 @@ class MainViewModel private constructor(
             currentState.copy(
                 showCurrencyFilters = visible,
                 showCurrencyStats = false
-            )
-        }
-    }
-
-    fun showDenominationFilters(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showDenominationFilters = visible,
-                showDenominationStats = false
             )
         }
     }

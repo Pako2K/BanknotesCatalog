@@ -144,16 +144,12 @@ class DenominationViewModel private constructor(
         _denominationUIState.update { currentState ->
             currentState.copy(
                 filterShownIssueYear =  dates,
+                state = if (dates.isValid) ComponentState.LOADING else currentState.state
             )
         }
 
         if (!dates.isValid) return
 
-        _denominationUIState.update { currentState ->
-            currentState.copy(
-                state = ComponentState.LOADING
-            )
-        }
         viewModelScope.launch {
             try {
                 repository.fetchDenominationStats(
@@ -164,7 +160,8 @@ class DenominationViewModel private constructor(
                 setDenominationsViewDataUI(selectedContinent)
                 _denominationUIState.update { currentState ->
                     currentState.copy(
-                        filterAppliedIssueYear = dates
+                        filterAppliedIssueYear = dates,
+                        state = ComponentState.DONE
                     )
                 }
                 _denominationHasFilterState.update {
@@ -172,11 +169,11 @@ class DenominationViewModel private constructor(
                 }
             } catch (exc: Exception) {
                 Log.e("App-BanknotesCatalog", "Fetch Denominations: " + exc.toString() + " - " + exc.cause)
-            }
-            _denominationUIState.update { currentState ->
-                currentState.copy(
-                    state = ComponentState.DONE
-                )
+                _denominationUIState.update { currentState ->
+                    currentState.copy(
+                        state = ComponentState.DONE
+                    )
+                }
             }
         }
     }
@@ -199,6 +196,24 @@ class DenominationViewModel private constructor(
                 _denominationUIState.value.denominationsTable.showCol(DenomFieldPrice, value)
             }
             else -> Unit
+        }
+    }
+
+    fun showStats(visible: Boolean){
+        _denominationUIState.update { currentState ->
+            currentState.copy(
+                showStats = visible,
+                showFilters = false
+            )
+        }
+    }
+
+    fun showFilters(visible: Boolean){
+        _denominationUIState.update { currentState ->
+            currentState.copy(
+                showFilters = visible,
+                showStats = false
+            )
         }
     }
 

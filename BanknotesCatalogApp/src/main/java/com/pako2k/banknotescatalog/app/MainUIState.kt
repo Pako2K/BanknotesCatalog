@@ -77,11 +77,9 @@ data class MainUiState (
 
     val showTerritoryStats: Boolean = false,
     val showCurrencyStats: Boolean = false,
-    val showDenominationStats: Boolean = false,
 
     val showTerritoryFilters : Boolean = false,
     val showCurrencyFilters: Boolean = false,
-    val showDenominationFilters: Boolean = false,
 
     val filterTerritoryTypes : Map<TerritoryTypeEnum, Boolean> = TerritoryTypeEnum.values().associateWith { true },
     val filterTerritoryState : Pair<Boolean,Boolean> = Pair(true,true),
