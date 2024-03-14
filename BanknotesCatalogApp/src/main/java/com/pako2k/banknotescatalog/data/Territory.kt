@@ -105,9 +105,7 @@ data class Territory (
         if (flag != other.flag) return false
         if (parentExt != other.parentExt) return false
         if (successorsExt != other.successorsExt) return false
-        if (predecessorsExt != other.predecessorsExt) return false
-
-        return true
+        return predecessorsExt == other.predecessorsExt
     }
 
     override fun hashCode(): Int {

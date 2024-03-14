@@ -240,12 +240,12 @@ private val testCurrencies = listOf(
     1u to "Convertible Mark (BAM) - Bosnia and Herzegovina",
 )
 
-private val testHistoryTer = listOf<Pair<UInt,String>>(
+private val testHistoryTer = listOf(
     1u to "United States",
 //    2u to "France",
 )
 
-private val testHistoryCur = listOf<Pair<UInt,String>>(
+private val testHistoryCur = listOf(
     3u to "Convertible Mark (BAM) - Bosnia and Herzegovina",
 //    4u to "Dollar",
 //    5u to "Sol",

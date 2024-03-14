@@ -276,14 +276,13 @@ private fun SortableColumnButton(
 }
 
 @Composable
-private fun HeaderText(text : String, modifier : Modifier = Modifier, isSubtitle: Boolean = false){
+private fun HeaderText(text : String, isSubtitle: Boolean = false){
     val weight = if (isSubtitle) FontWeight.Normal else FontWeight.Bold
     Text(
         text,
         fontWeight = weight,
         style = typographySans.displaySmall,
         color = color_table_header_text,
-        modifier = modifier
     )
 }
 

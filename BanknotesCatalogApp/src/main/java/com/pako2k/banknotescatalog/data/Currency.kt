@@ -155,9 +155,7 @@ data class Currency (
         if (description != other.description) return false
         if (uri != other.uri) return false
         if (startYear != other.startYear) return false
-        if (endYear != other.endYear) return false
-
-        return true
+        return endYear == other.endYear
     }
 
     override fun hashCode(): Int {
