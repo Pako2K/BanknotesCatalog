@@ -2,29 +2,32 @@ package com.pako2k.banknotescatalog.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.dp
-import com.pako2k.banknotescatalog.data.CurrencyFieldDenominations
-import com.pako2k.banknotescatalog.data.CurrencyFieldEnd
-import com.pako2k.banknotescatalog.data.CurrencyFieldIssues
-import com.pako2k.banknotescatalog.data.CurrencyFieldName
-import com.pako2k.banknotescatalog.data.CurrencyFieldNotes
-import com.pako2k.banknotescatalog.data.CurrencyFieldOwnedBy
-import com.pako2k.banknotescatalog.data.CurrencyFieldPrice
-import com.pako2k.banknotescatalog.data.CurrencyFieldStart
-import com.pako2k.banknotescatalog.data.CurrencyFieldVariants
 import com.pako2k.banknotescatalog.data.FilterDates
-import com.pako2k.banknotescatalog.data.SortDirection
-import com.pako2k.banknotescatalog.data.TerritoryFieldCurrencies
-import com.pako2k.banknotescatalog.data.TerritoryFieldDenominations
-import com.pako2k.banknotescatalog.data.TerritoryFieldEnd
-import com.pako2k.banknotescatalog.data.TerritoryFieldIssues
-import com.pako2k.banknotescatalog.data.TerritoryFieldName
-import com.pako2k.banknotescatalog.data.TerritoryFieldNotes
-import com.pako2k.banknotescatalog.data.TerritoryFieldPrice
-import com.pako2k.banknotescatalog.data.TerritoryFieldStart
-import com.pako2k.banknotescatalog.data.TerritoryFieldVariants
 import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldDenominations
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldEnd
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldIssues
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldName
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldNotes
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldOwnedBy
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldPrice
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldStart
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldVariants
+import com.pako2k.banknotescatalog.data.repo.SortDirection
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldCurrencies
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldDenominations
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldEnd
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldIssues
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldName
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldNotes
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldPrice
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldStart
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldVariants
 
-private const val STATS_COL_WIDTH = 52
+
+data class MainUiInitializationState (
+    val state : ComponentState = ComponentState.LOADING,
+)
 
 
 data class MainUiState (
@@ -74,9 +77,13 @@ data class MainUiState (
 
     val showTerritoryStats: Boolean = false,
     val showCurrencyStats: Boolean = false,
+    val showDenominationStats: Boolean = false,
+    val showIssueYearStats: Boolean = false,
 
     val showTerritoryFilters : Boolean = false,
     val showCurrencyFilters: Boolean = false,
+    val showDenominationFilters: Boolean = false,
+    val showIssueYearFilters: Boolean = false,
 
     val filterTerritoryTypes : Map<TerritoryTypeEnum, Boolean> = TerritoryTypeEnum.values().associateWith { true },
     val filterTerritoryState : Pair<Boolean,Boolean> = Pair(true,true),
@@ -86,5 +93,7 @@ data class MainUiState (
     val filterCurrencyTypes : Pair<Boolean,Boolean> = Pair(true,true),
     val filterCurrencyState : Pair<Boolean,Boolean> = Pair(true,true),
     val filterCurFounded : FilterDates = FilterDates(null,null),
-    val filterCurExtinct : FilterDates = FilterDates(null,null)
+    val filterCurExtinct : FilterDates = FilterDates(null,null),
+
+    val filterIssueYear : FilterDates = FilterDates(null,null)
 )

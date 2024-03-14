@@ -9,8 +9,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.data.ShowPreferenceEnum
-import com.pako2k.banknotescatalog.data.ShowPreferences
+import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
+import com.pako2k.banknotescatalog.data.repo.ShowPreferences
 import com.pako2k.banknotescatalog.ui.parts.CheckButtonGroup
 import com.pako2k.banknotescatalog.ui.parts.CheckOption
 import com.pako2k.banknotescatalog.ui.parts.CommonCard
@@ -33,13 +33,14 @@ fun SettingsUI (
                     "Show in Summary",
                     MaterialTheme.colorScheme.onBackground,
                     MaterialTheme.colorScheme.onPrimary,
-                    CheckOption("Dates",options.showDates) { onClick(ShowPreferenceEnum.KEY_SHOW_DATES, it) },
-                    CheckOption("Currency Stats",options.showCurrencies) { onClick(ShowPreferenceEnum.KEY_SHOW_CUR, it) },
-                    CheckOption("Issue Stats",options.showIssues) { onClick(ShowPreferenceEnum.KEY_SHOW_ISSUES, it) },
-                    CheckOption("Face Value Stats",options.showFaceValues) { onClick(ShowPreferenceEnum.KEY_SHOW_VALUES, it) },
-                    CheckOption("Note Types Stats",options.showNoteTypes) { onClick(ShowPreferenceEnum.KEY_SHOW_NOTES, it) },
-                    CheckOption("Variants Stats",options.showVariants){ onClick(ShowPreferenceEnum.KEY_SHOW_VARIANTS, it) },
-                    CheckOption("Collection Price",options.showPrice){ onClick(ShowPreferenceEnum.KEY_SHOW_PRICES, it) },
+                    CheckOption("Dates",options.showDates) { onClick(ShowPreferenceEnum.SHOW_DATES, it) },
+                    CheckOption("Territory Stats",options.showTerritories) { onClick(ShowPreferenceEnum.SHOW_TERRITORIES, it) },
+                    CheckOption("Currency Stats",options.showCurrencies) { onClick(ShowPreferenceEnum.SHOW_CUR, it) },
+                    CheckOption("Issue Stats",options.showIssues) { onClick(ShowPreferenceEnum.SHOW_ISSUES, it) },
+                    CheckOption("Face Value Stats",options.showFaceValues) { onClick(ShowPreferenceEnum.SHOW_VALUES, it) },
+                    CheckOption("Note Types Stats",options.showNoteTypes) { onClick(ShowPreferenceEnum.SHOW_NOTES, it) },
+                    CheckOption("Variants Stats",options.showVariants){ onClick(ShowPreferenceEnum.SHOW_VARIANTS, it) },
+                    CheckOption("Collection Price",options.showPrice){ onClick(ShowPreferenceEnum.SHOW_PRICES, it) },
                 )
             }
         }
@@ -55,6 +56,7 @@ private fun SettingsUIPreview() {
         SettingsUI(
             ShowPreferences(
                 showDates = true,
+                showTerritories = true,
                 showCurrencies = true,
                 showIssues = false,
                 showFaceValues = false,

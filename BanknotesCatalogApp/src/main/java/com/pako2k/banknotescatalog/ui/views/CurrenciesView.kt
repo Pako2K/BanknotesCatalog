@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.Dp
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
-import com.pako2k.banknotescatalog.data.CurrencySortableField
+import com.pako2k.banknotescatalog.data.repo.CurrencySortableField
 import com.pako2k.banknotescatalog.ui.parts.SummaryTableUI
 
 

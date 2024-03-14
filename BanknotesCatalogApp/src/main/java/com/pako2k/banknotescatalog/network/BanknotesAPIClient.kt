@@ -3,15 +3,18 @@ package com.pako2k.banknotescatalog.network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
-import com.pako2k.banknotescatalog.data.CurrencyStats
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryStats
 import com.pako2k.banknotescatalog.data.TerritoryType
+import com.pako2k.banknotescatalog.data.stats.CurrencyStats
+import com.pako2k.banknotescatalog.data.stats.DenominationStats
+import com.pako2k.banknotescatalog.data.stats.IssueYearStats
+import com.pako2k.banknotescatalog.data.stats.TerritoryStats
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.http.GET
+import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 
@@ -33,6 +36,14 @@ interface BanknotesAPIService{
 
     @GET("currency/stats")
     suspend fun getCurrencyStats() : List<CurrencyStats>
+
+    @GET("denomination/stats")
+    suspend fun getDenominationStats(
+        @Query("fromYear") fromYear : Int? = null,
+        @Query("toYear") toYear : Int? = null) : List<DenominationStats>
+
+    @GET("issue-year/stats")
+    suspend fun getIssueYearStats() : List<IssueYearStats>
 }
 
 
@@ -64,4 +75,10 @@ class BanknotesAPIClient (
     suspend fun getTerritoryStats() = retrofitService.getTerritoryStats()
     suspend fun getCurrencies() = retrofitService.getCurrencies()
     suspend fun getCurrencyStats() = retrofitService.getCurrencyStats()
+    suspend fun getDenominationStats(
+        fromYear : Int? = null,
+        toYear : Int? = null)
+     = retrofitService.getDenominationStats(fromYear, toYear)
+    suspend fun getIssueYearStats() = retrofitService.getIssueYearStats()
+
 }

@@ -11,11 +11,11 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.app.SummaryTableColumn
-import com.pako2k.banknotescatalog.data.SortDirection
-import com.pako2k.banknotescatalog.data.TerritoryFieldEnd
-import com.pako2k.banknotescatalog.data.TerritoryFieldName
-import com.pako2k.banknotescatalog.data.TerritoryFieldStart
-import com.pako2k.banknotescatalog.data.TerritorySortableField
+import com.pako2k.banknotescatalog.data.repo.SortDirection
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldEnd
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldName
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldStart
+import com.pako2k.banknotescatalog.data.repo.TerritorySortableField
 import com.pako2k.banknotescatalog.ui.parts.SummaryTableUI
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 

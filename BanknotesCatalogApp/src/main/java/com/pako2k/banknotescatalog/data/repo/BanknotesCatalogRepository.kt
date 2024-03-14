@@ -1,9 +1,22 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.repo
 
 import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import com.pako2k.banknotescatalog.app.StatsSubColumn
+import com.pako2k.banknotescatalog.data.Continent
+import com.pako2k.banknotescatalog.data.Currency
+import com.pako2k.banknotescatalog.data.FilterDates
+import com.pako2k.banknotescatalog.data.Territory
+import com.pako2k.banknotescatalog.data.TerritoryType
+import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
+import com.pako2k.banknotescatalog.data.stats.CurrencyStats
+import com.pako2k.banknotescatalog.data.stats.CurrencySummaryStats
+import com.pako2k.banknotescatalog.data.stats.DenominationStats
+import com.pako2k.banknotescatalog.data.stats.DenominationSummaryStats
+import com.pako2k.banknotescatalog.data.stats.IssueYearStats
+import com.pako2k.banknotescatalog.data.stats.TerritoryStats
+import com.pako2k.banknotescatalog.data.stats.TerritorySummaryStats
 import com.pako2k.banknotescatalog.localsource.FlagsLocalDataSource
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 import com.pako2k.banknotescatalog.network.BanknotesNetworkDataSource
@@ -18,6 +31,28 @@ enum class SortDirection {
 }
 
 sealed class SortableField
+
+// Enumeration of IssueYear fields which can be used for sorting. Implemented as child of SortableField!
+sealed class IssueYearSortableField : SortableField()
+object IssueYearFieldValue : IssueYearSortableField()
+object IssueYearFieldTerritories : IssueYearSortableField()
+object IssueYearFieldCurrencies : IssueYearSortableField()
+object IssueYearFieldIssues : IssueYearSortableField()
+object IssueYearFieldDenominations : IssueYearSortableField()
+object IssueYearFieldNotes : IssueYearSortableField()
+object IssueYearFieldVariants : IssueYearSortableField()
+object IssueYearFieldPrice : IssueYearSortableField()
+
+
+// Enumeration of Denomination fields which can be used for sorting. Implemented as child of SortableField!
+sealed class DenomSortableField : SortableField()
+object DenomFieldValue : DenomSortableField()
+object DenomFieldTerritories : DenomSortableField()
+object DenomFieldCurrencies : DenomSortableField()
+object DenomFieldNotes : DenomSortableField()
+object DenomFieldVariants : DenomSortableField()
+object DenomFieldPrice : DenomSortableField()
+
 
 // Enumeration of Currency fields which can be used for sorting. Implemented as child of SortableField!
 sealed class CurrencySortableField : SortableField()
@@ -99,9 +134,27 @@ class BanknotesCatalogRepository private constructor(
     var currencyColStats : List<CurrencyStats> = listOf()
         private set
 
-    var territorySummaryStats : Map<String,TerritorySummaryStats> = mapOf()
+    var denominationCatStats : List<DenominationStats> = listOf()
         private set
-    var currencySummaryStats : Map<String,CurrencySummaryStats> = mapOf()
+
+    var denominationColStats : List<DenominationStats> = listOf()
+        private set
+
+    var issueYearCatStats : List<IssueYearStats> = listOf()
+        private set
+
+    var issueYearColStats : List<IssueYearStats> = listOf()
+        private set
+
+    var territorySummaryStats : Map<String, TerritorySummaryStats> = mapOf()
+        private set
+    var currencySummaryStats : Map<String, CurrencySummaryStats> = mapOf()
+        private set
+
+    var denominationSummaryStats : DenominationSummaryStats = DenominationSummaryStats(
+        DenominationSummaryStats.Data(0,0),
+        DenominationSummaryStats.Data(0,0)
+    )
         private set
 
     companion object {
@@ -113,7 +166,7 @@ class BanknotesCatalogRepository private constructor(
             continentCacheRepository: ContinentCacheRepository,
             terTypeCacheRepository: TerritoryTypeCacheRepository
         ) : BanknotesCatalogRepository {
-            if (_repository==null)
+            if (_repository ==null)
                 _repository = BanknotesCatalogRepository(
                     FlagsLocalDataSource(ctx.assets),
                     BanknotesNetworkDataSource(banknotesApiClient),
@@ -178,6 +231,16 @@ class BanknotesCatalogRepository private constructor(
         currencyCatStats = banknotesNetworkDataSource.getCurrencyStats()
     }
 
+    suspend fun fetchDenominationStats(
+        fromYear : Int? = null,
+        toYear : Int? = null) {
+        denominationCatStats = banknotesNetworkDataSource.getDenominationStats(fromYear,toYear)
+    }
+
+    suspend fun fetchIssueYearStats() {
+        issueYearCatStats = banknotesNetworkDataSource.getIssueYearStats()
+    }
+
     fun setStats(continentId : UInt? = null){
         val tmp = mutableMapOf<String, TerritorySummaryStats>()
         val territoriesByCont = if (continentId!= null) territories.filter { it.continent.id == continentId } else territories
@@ -222,6 +285,24 @@ class BanknotesCatalogRepository private constructor(
         tmpCur["Shared"] = CurrencySummaryStats(current = CurrencySummaryStats.Data(sharedCurrentCount), extinct = CurrencySummaryStats.Data(sharedExtinctCount) )
 
         currencySummaryStats = tmpCur
+    }
+
+    fun setDenominationStats(continentId : UInt? = null){
+        var totalExtinctCount = 0
+        var totalCurrentCount = 0
+        denominationCatStats.forEach {den ->
+            if (continentId == null){
+                if(den.totalStats.isCurrent) totalCurrentCount++
+                else totalExtinctCount++
+            }
+            else{
+                den.continentStats.find { it.id == continentId }?.let {
+                    if (it.isCurrent)  totalCurrentCount++
+                    else totalExtinctCount++
+                }
+            }
+        }
+        denominationSummaryStats = DenominationSummaryStats(current = DenominationSummaryStats.Data(totalCurrentCount), extinct = DenominationSummaryStats.Data(totalExtinctCount) )
     }
 
     fun sortTerritories(sortBy : TerritorySortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection){
@@ -387,6 +468,213 @@ class BanknotesCatalogRepository private constructor(
         }
     }
 
+
+    fun sortDenominations(sortBy : DenomSortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection, continentId : UInt?){
+        denominationCatStats = when (sortBy){
+            DenomFieldValue ->
+                if (sortingDir == SortDirection.DESC){
+                    denominationCatStats.sortedByDescending { it.denomination }
+                }
+                else{
+                    denominationCatStats.sortedBy { it.denomination }
+                }
+            DenomFieldTerritories ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { if (continentId == null) it.totalStats.numTerritories else it.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }
+                    else
+                        denominationCatStats.sortedBy { if (continentId == null) it.totalStats.numTerritories else it.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numTerritories else found.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }?:0
+                        }
+                    else
+                        denominationCatStats.sortedBy { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numTerritories else found.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }?:0
+                        }
+                }
+            DenomFieldCurrencies ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { if (continentId == null) it.totalStats.numCurrencies else it.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }
+                    else
+                        denominationCatStats.sortedBy { if (continentId == null) it.totalStats.numCurrencies else it.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numCurrencies else found.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }?:0
+                        }
+                    else
+                        denominationCatStats.sortedBy { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numCurrencies else found.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }?:0
+                        }
+                }
+            DenomFieldNotes ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { if (continentId == null) it.totalStats.numNotes else it.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }
+                    else
+                        denominationCatStats.sortedBy { if (continentId == null) it.totalStats.numNotes else it.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numNotes else found.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }?:0
+                        }
+                    else
+                        denominationCatStats.sortedBy { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numNotes else found.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }?:0
+                        }
+                }
+            DenomFieldVariants ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { if (continentId == null) it.totalStats.numVariants else it.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }
+                    else
+                        denominationCatStats.sortedBy { if (continentId == null) it.totalStats.numVariants else it.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        denominationCatStats.sortedByDescending { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numVariants else found.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }?:0
+                        }
+                    else
+                        denominationCatStats.sortedBy { denominationColStats.find { col -> col.denomination == it.denomination }?.let{ found ->
+                            if (continentId == null) found.totalStats.numVariants else found.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }?:0
+                        }
+                }
+            DenomFieldPrice -> {
+                if (sortingDir == SortDirection.DESC)
+                    denominationCatStats.sortedByDescending { denominationColStats.find { it2 -> it2.denomination == it.denomination }?.price?:0f }
+                else
+                    denominationCatStats.sortedBy { denominationColStats.find { it2 -> it2.denomination == it.denomination }?.price?:0f }
+            }
+        }
+    }
+
+
+    fun sortIssueYears(sortBy : IssueYearSortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection, continentId : UInt?){
+        issueYearCatStats = when (sortBy){
+            IssueYearFieldValue ->
+                if (sortingDir == SortDirection.DESC){
+                    issueYearCatStats.sortedByDescending { it.issueYear }
+                }
+                else{
+                    issueYearCatStats.sortedBy { it.issueYear }
+                }
+            IssueYearFieldTerritories ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numTerritories else it.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numTerritories else it.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numTerritories else found.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numTerritories else found.continentStats.find { cont -> cont.id == continentId }?.numTerritories?:0 }?:0
+                        }
+                }
+            IssueYearFieldCurrencies ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numCurrencies else it.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numCurrencies else it.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numCurrencies else found.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numCurrencies else found.continentStats.find { cont -> cont.id == continentId }?.numCurrencies?:0 }?:0
+                        }
+                }
+            IssueYearFieldIssues ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numSeries else it.continentStats.find { cont -> cont.id == continentId }?.numSeries?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numSeries else it.continentStats.find { cont -> cont.id == continentId }?.numSeries?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numSeries else found.continentStats.find { cont -> cont.id == continentId }?.numSeries?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numSeries else found.continentStats.find { cont -> cont.id == continentId }?.numSeries?:0 }?:0
+                        }
+                }
+            IssueYearFieldDenominations ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numDenominations else it.continentStats.find { cont -> cont.id == continentId }?.numDenominations?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numDenominations else it.continentStats.find { cont -> cont.id == continentId }?.numDenominations?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numDenominations else found.continentStats.find { cont -> cont.id == continentId }?.numDenominations?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numDenominations else found.continentStats.find { cont -> cont.id == continentId }?.numDenominations?:0 }?:0
+                        }
+                }
+            IssueYearFieldNotes ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numNotes else it.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numNotes else it.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numNotes else found.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numNotes else found.continentStats.find { cont -> cont.id == continentId }?.numNotes?:0 }?:0
+                        }
+                }
+            IssueYearFieldVariants ->
+                if (statsCol == StatsSubColumn.CATALOG){
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { if (continentId == null) it.totalStats.numVariants else it.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }
+                    else
+                        issueYearCatStats.sortedBy { if (continentId == null) it.totalStats.numVariants else it.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }
+                }
+                else{
+                    if (sortingDir == SortDirection.DESC)
+                        issueYearCatStats.sortedByDescending { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numVariants else found.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }?:0
+                        }
+                    else
+                        issueYearCatStats.sortedBy { issueYearColStats.find { col -> col.issueYear == it.issueYear }?.let{ found ->
+                            if (continentId == null) found.totalStats.numVariants else found.continentStats.find { cont -> cont.id == continentId }?.numVariants?:0 }?:0
+                        }
+                }
+            IssueYearFieldPrice -> {
+                if (sortingDir == SortDirection.DESC)
+                    issueYearCatStats.sortedByDescending { issueYearColStats.find { it2 -> it2.issueYear == it.issueYear }?.price?:0f }
+                else
+                    issueYearCatStats.sortedBy { issueYearColStats.find { it2 -> it2.issueYear == it.issueYear }?.price?:0f }
+            }
+        }
+    }
 
     fun getTerritories (
         byContinent : UInt?,

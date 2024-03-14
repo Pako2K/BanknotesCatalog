@@ -45,10 +45,10 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.app.SummaryTable
 import com.pako2k.banknotescatalog.app.SummaryTableColumn
-import com.pako2k.banknotescatalog.data.SortDirection
-import com.pako2k.banknotescatalog.data.TerritoryFieldEnd
-import com.pako2k.banknotescatalog.data.TerritoryFieldName
-import com.pako2k.banknotescatalog.data.TerritoryFieldStart
+import com.pako2k.banknotescatalog.data.repo.SortDirection
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldEnd
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldName
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldStart
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_bottom
 import com.pako2k.banknotescatalog.ui.theme.color_table_header_text
@@ -157,7 +157,7 @@ private fun SummaryTableHeader(
                     .horizontalScroll(horizontalScroll)
             ) {
                 scrollableColumns.forEachIndexed { index, col ->
-                    if (col.isStats && !scrollableColumns[index - 1].isStats)
+                    if (col.isStats && index > 0 && !scrollableColumns[index - 1].isStats)
                         BorderDivider(R.color.header_border_color)
                     if (col.isVisible)
                         HeaderColumn(fixedColumns.size + index, col, isLogged, onClick = onClick)
@@ -385,7 +385,7 @@ private fun DataRow(
                     }
 
                     else -> {
-                        if (col.isStats && !columns[colIndex - 1].isStats) {
+                        if (col.isStats && colIndex > 0 && !columns[colIndex - 1].isStats) {
                             BorderDivider(R.color.data_border_color)
                         }
                         if (col.isVisible)

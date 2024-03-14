@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -21,39 +24,57 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.data.stats.CurrencySummaryStats
+import com.pako2k.banknotescatalog.app.DenominationViewModel
+import com.pako2k.banknotescatalog.data.stats.DenominationSummaryStats
 import com.pako2k.banknotescatalog.ui.common.rightBorder
 import com.pako2k.banknotescatalog.ui.parts.CommonCard
 import com.pako2k.banknotescatalog.ui.parts.StatsTableData
 import com.pako2k.banknotescatalog.ui.parts.StatsTableHeader
-import com.pako2k.banknotescatalog.ui.parts.StatsTableRowTitles
 import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 
 
 
 @Composable
-fun CurrencyStatsUI (
-    data : Map<String, CurrencySummaryStats>,
+fun DenominationStatsUI(
+    viewModel: DenominationViewModel,
+    data : DenominationSummaryStats,
     continentName : String?,
     isLoggedIn : Boolean,
     onClose : () -> Unit
 ){
-    val continentSuffix =
-        if(continentName != null) " - $continentName"
-        else ""
+    // initializationState as state, to trigger recompositions of the whole UI
+    val uiState by viewModel.denominationUIState.collectAsState()
+
+    var suffix = if(continentName != null) " - $continentName" else ""
+    suffix += if (uiState.filterAppliedIssueYear.from != null && uiState.filterAppliedIssueYear.to != null)
+        " (${uiState.filterAppliedIssueYear.from} - ${uiState.filterAppliedIssueYear.to})"
+    else if (uiState.filterAppliedIssueYear.from != null)
+        " (from ${uiState.filterAppliedIssueYear.from})"
+    else if (uiState.filterAppliedIssueYear.to != null)
+        " (until ${uiState.filterAppliedIssueYear.to})"
+    else
+        ""
+
 
     CommonCard(
-        title = "Currencies in Catalog$continentSuffix",
+        title = "Denominations $suffix",
         onClose = onClose
     ) {
-        StatsTable(data, isLoggedIn)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            StatsTable(data, isLoggedIn)
+        }
     }
 }
 
+
 @Composable
 private fun StatsTable(
-    data : Map<String, CurrencySummaryStats>,
+    data : DenominationSummaryStats,
     isLoggedIn : Boolean
 ){
     val subtitles = setOf("Catalog","Collec.")
@@ -66,7 +87,6 @@ private fun StatsTable(
     ) {
         // Inside Box for the overall background
         Box(
-            contentAlignment = Alignment.CenterEnd,
             modifier = Modifier
                 .padding(1.dp)
                 .border(Dp.Hairline, Color.Gray)
@@ -74,16 +94,6 @@ private fun StatsTable(
                 .verticalScroll(rememberScrollState())
         ){
             Row {
-                // 1st Column
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Max)
-                        .rightBorder(Color.White)
-                ) {
-                    StatsTableHeader("", setOf(""), isLoggedIn)
-                    StatsTableRowTitles(data.keys)
-                }
-
                 // Data Columns
                 Column(
                     modifier = Modifier
@@ -91,13 +101,7 @@ private fun StatsTable(
                         .rightBorder(Color.White)
                 ) {
                     StatsTableHeader("Existing", subtitles, isLoggedIn)
-                    data.onEachIndexed { index, type ->
-                        StatsTableData(
-                            index,
-                            listOf(type.value.current.total,type.value.current.collection),
-                            isLoggedIn
-                        )
-                    }
+                    StatsTableData(0, listOf(data.current.total,data.current.collection), isLoggedIn)
                 }
                 Column(
                     modifier = Modifier
@@ -105,25 +109,13 @@ private fun StatsTable(
                         .rightBorder(Color.White)
                 ) {
                     StatsTableHeader("Extinct", subtitles, isLoggedIn)
-                    data.onEachIndexed { index, type ->
-                        StatsTableData(
-                            index,
-                            listOf(type.value.extinct.total,type.value.extinct.collection),
-                            isLoggedIn
-                        )
-                    }
+                    StatsTableData(0, listOf(data.extinct.total,data.extinct.collection), isLoggedIn)
                 }
                 Column(
                     modifier = Modifier.width(IntrinsicSize.Max)
                 ) {
                     StatsTableHeader("Total", subtitles, isLoggedIn)
-                    data.onEachIndexed { index, type ->
-                        StatsTableData(
-                            index,
-                            listOf(type.value.total.total,type.value.total.collection),
-                            isLoggedIn
-                        )
-                    }
+                    StatsTableData(0, listOf(data.total.total,data.total.collection), isLoggedIn)
                 }
             }
         }
@@ -133,46 +125,35 @@ private fun StatsTable(
 
 
 
+
 private const val PREVIEW_WIDTH = 380
 private const val PREVIEW_HEIGHT = 800
 
-private val testData1 = CurrencySummaryStats(
-    current = CurrencySummaryStats.Data(
+private val testData1 = DenominationSummaryStats(
+    current = DenominationSummaryStats.Data(
         total = 122, collection = 12
     ),
-    extinct = CurrencySummaryStats.Data(
+    extinct = DenominationSummaryStats.Data(
         total = 22, collection = 1
     )
 )
 
-private val testData2 = CurrencySummaryStats(
-    current = CurrencySummaryStats.Data(
-        total = 22, collection = 1
-    ),
-    extinct = CurrencySummaryStats.Data(
-        total = 22, collection = 1
-    )
-)
 
-private val testData = mapOf(
-    "Total" to testData1,
-    "Shared" to testData2,
-)
 
 @Preview(widthDp = PREVIEW_WIDTH, heightDp = PREVIEW_HEIGHT)
 @Composable
-private fun TerritoryStatsUIPreviewPortrait() {
+private fun DenominationStatsUIPreviewPortrait() {
     BanknotesCatalogTheme {
-        CurrencyStatsUI(testData, null,true) {}
+        DenominationStatsUI (viewModel(factory = DenominationViewModel.Factory), testData1, "Africa", isLoggedIn = true) { }
     }
 }
 
 @Preview(widthDp = PREVIEW_HEIGHT, heightDp = 340)
 @Composable
-private fun TerritoryStatsUIPreviewLandscape() {
+private fun DenominationStatsUIPreviewLandscape() {
     BanknotesCatalogTheme {
         Surface {
-            CurrencyStatsUI (testData, "Europe",false) { }
+            DenominationStatsUI (viewModel(factory = DenominationViewModel.Factory), testData1, null, isLoggedIn = false) { }
         }
     }
 }

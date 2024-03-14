@@ -1,9 +1,9 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.stats
 
 class CurrencySummaryStats(
-    // Current territory = Territory w/o an endDate
+    // Current currency = Currency w/o an endDate
     val current : Data,
-    // Current territory = Territory with an endDate
+    // Current currency = Currency with an endDate
     val extinct : Data
 ){
     data class Data(
@@ -14,10 +14,11 @@ class CurrencySummaryStats(
     val total = current + extinct
 }
 
-operator fun CurrencySummaryStats.Data.plus(other : CurrencySummaryStats.Data) = CurrencySummaryStats.Data(
-    this.total + other.total,
-    this.collection + other.collection
-)
+operator fun CurrencySummaryStats.Data.plus(other : CurrencySummaryStats.Data) =
+    CurrencySummaryStats.Data(
+        this.total + other.total,
+        this.collection + other.collection
+    )
 
 operator fun CurrencySummaryStats.plus(other : CurrencySummaryStats) = CurrencySummaryStats(
     this.current + other.current,

@@ -1,4 +1,4 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.repo
 
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -17,22 +17,35 @@ import java.io.IOException
  */
 data class ShowPreferences(
     val showDates : Boolean = true,
+    val showTerritories : Boolean = true,
     val showCurrencies : Boolean = true,
     val showIssues : Boolean = true,
     val showFaceValues : Boolean = true,
     val showNoteTypes : Boolean = true,
     val showVariants : Boolean = true,
     val showPrice: Boolean = true
-)
+){
+    val map : Map<ShowPreferenceEnum, Boolean> = mapOf(
+        ShowPreferenceEnum.SHOW_DATES to showDates,
+        ShowPreferenceEnum.SHOW_TERRITORIES to showTerritories,
+        ShowPreferenceEnum.SHOW_CUR to showCurrencies,
+        ShowPreferenceEnum.SHOW_ISSUES to showIssues,
+        ShowPreferenceEnum.SHOW_VALUES to showFaceValues,
+        ShowPreferenceEnum.SHOW_NOTES to showNoteTypes,
+        ShowPreferenceEnum.SHOW_VARIANTS to showVariants,
+        ShowPreferenceEnum.SHOW_PRICES to showPrice
+    )
+}
 
 enum class ShowPreferenceEnum(val key : String){
-    KEY_SHOW_DATES(key = "show_dates"),
-    KEY_SHOW_CUR(key = "show_cur"),
-    KEY_SHOW_ISSUES(key = "show_issues"),
-    KEY_SHOW_VALUES(key = "show_values"),
-    KEY_SHOW_NOTES(key = "show_notes"),
-    KEY_SHOW_VARIANTS(key = "show_variants"),
-    KEY_SHOW_PRICES(key = "show_prices")
+    SHOW_DATES(key = "show_dates"),
+    SHOW_TERRITORIES(key = "show_territories"),
+    SHOW_CUR(key = "show_cur"),
+    SHOW_ISSUES(key = "show_issues"),
+    SHOW_VALUES(key = "show_values"),
+    SHOW_NOTES(key = "show_notes"),
+    SHOW_VARIANTS(key = "show_variants"),
+    SHOW_PRICES(key = "show_prices")
 }
 
 
@@ -62,13 +75,14 @@ class ShowPreferencesRepository(
             }
         }.map { preferences ->
             ShowPreferences(
-                preferences[ShowPreferenceEnum.KEY_SHOW_DATES.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_CUR.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_ISSUES.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_VALUES.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_NOTES.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_VARIANTS.boolKey()]?:true,
-                preferences[ShowPreferenceEnum.KEY_SHOW_PRICES.boolKey()]?:true
+                preferences[ShowPreferenceEnum.SHOW_DATES.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_TERRITORIES.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_CUR.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_ISSUES.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_VALUES.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_NOTES.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_VARIANTS.boolKey()]?:true,
+                preferences[ShowPreferenceEnum.SHOW_PRICES.boolKey()]?:true
             )
         }
 

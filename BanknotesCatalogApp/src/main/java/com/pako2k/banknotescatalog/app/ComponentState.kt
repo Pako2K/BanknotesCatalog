@@ -5,7 +5,3 @@ enum class ComponentState {
     DONE,
     FAILED
 }
-
-data class MainUiInitializationState (
-    val state : ComponentState = ComponentState.LOADING
-)

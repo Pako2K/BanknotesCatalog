@@ -4,11 +4,11 @@ import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
-import com.pako2k.banknotescatalog.data.ContinentCacheRepository
-import com.pako2k.banknotescatalog.data.ShowPreferencesRepository
-import com.pako2k.banknotescatalog.data.TerritoryTypeCacheRepository
-import com.pako2k.banknotescatalog.data.UserPreferencesRepository
+import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
+import com.pako2k.banknotescatalog.data.repo.ContinentCacheRepository
+import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
+import com.pako2k.banknotescatalog.data.repo.TerritoryTypeCacheRepository
+import com.pako2k.banknotescatalog.data.repo.UserPreferencesRepository
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 
 

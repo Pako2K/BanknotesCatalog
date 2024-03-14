@@ -2,9 +2,10 @@ package com.pako2k.banknotescatalog.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.Dp
-import com.pako2k.banknotescatalog.data.SortDirection
-import com.pako2k.banknotescatalog.data.SortableField
+import com.pako2k.banknotescatalog.data.repo.SortDirection
+import com.pako2k.banknotescatalog.data.repo.SortableField
 
+const val STATS_COL_WIDTH = 52
 
 enum class StatsSubColumn (val title : String){
     CATALOG (title = "Cat."),

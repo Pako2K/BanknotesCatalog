@@ -1,4 +1,4 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.stats
 
 data class TerritorySummaryStats(
     // Current territory = Territory w/o an endDate

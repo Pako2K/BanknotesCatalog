@@ -29,10 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -42,6 +42,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
+import com.pako2k.banknotescatalog.app.DenominationViewModel
+import com.pako2k.banknotescatalog.app.IssueYearViewModel
 import com.pako2k.banknotescatalog.app.MainViewModel
 import com.pako2k.banknotescatalog.ui.parts.Bookmarks
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
@@ -50,13 +52,18 @@ import com.pako2k.banknotescatalog.ui.parts.Header
 import com.pako2k.banknotescatalog.ui.parts.HeaderMenu
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
-import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
+import com.pako2k.banknotescatalog.ui.views.DenominationsView
+import com.pako2k.banknotescatalog.ui.views.IssueYearsView
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
+import com.pako2k.banknotescatalog.ui.views.subviews.DenominationFiltersUI
+import com.pako2k.banknotescatalog.ui.views.subviews.DenominationStatsUI
+import com.pako2k.banknotescatalog.ui.views.subviews.IssueYearFiltersUI
+import com.pako2k.banknotescatalog.ui.views.subviews.IssueYearStatsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.SettingsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
@@ -75,7 +82,12 @@ fun BanknotesCatalogUI(
     val initializationState by mainViewModel.initializationState.collectAsState()
 
     if ( initializationState.state == ComponentState.DONE){
-        MainScreen(windowSize, screenWidth, mainViewModel)
+        MainScreen(
+            windowSize,
+            screenWidth,
+            mainViewModel,
+            viewModel(factory = DenominationViewModel.Factory),
+            viewModel(factory = IssueYearViewModel.Factory))
     }
     else
         FrontPage(
@@ -89,6 +101,8 @@ fun MainScreen(
     windowSize : WindowSizeClass,
     screenWidth: Dp,
     mainViewModel : MainViewModel,
+    denominationViewModel : DenominationViewModel,
+    issueYearViewModel : IssueYearViewModel,
     navController : NavHostController = rememberNavController()
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
@@ -100,6 +114,9 @@ fun MainScreen(
 
     // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
+
+    val denHasFilter = denominationViewModel.denominationHasFilterState.collectAsState()
+    val yearHasFilter = issueYearViewModel.issueYearHasFilterState.collectAsState()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -120,8 +137,10 @@ fun MainScreen(
     if (showSettings){
          SettingsUI(
              options = showPreferences,
-             onClick = {
-                       pref, value -> mainViewModel.updateSettings(pref, value)
+             onClick = { pref, value ->
+                 mainViewModel.updateSettings(pref, value)
+                 denominationViewModel.updateSettings(pref, value)
+                 issueYearViewModel.updateSettings(pref, value)
                        },
              onClose = {
                  showSettings = false
@@ -130,14 +149,16 @@ fun MainScreen(
 
 
     val hasFilter = when(mainMenuOption){
-        MenuOption.COUNTRIES -> (uiState.filterTerritoryState != Pair(true,true) ||
-                uiState.filterTerritoryTypes.containsValue(false) ||
-                (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
-                (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null)))
-        MenuOption.CURRENCIES -> (uiState.filterCurrencyTypes != Pair(true,true) ||
-                uiState.filterCurrencyState != Pair(true,true) ||
-                (uiState.filterCurFounded.isValid && (uiState.filterCurFounded.from != null || uiState.filterCurFounded.to != null)) ||
-                (uiState.filterCurExtinct.isValid && (uiState.filterCurExtinct.from != null || uiState.filterCurExtinct.to != null)))
+        MenuOption.COUNTRIES ->
+            (uiState.filterTerritoryState != Pair(true,true) ||
+            uiState.filterTerritoryTypes.containsValue(false) ||
+            (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
+            (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null)))
+        MenuOption.CURRENCIES ->
+            (uiState.filterCurrencyTypes != Pair(true,true) ||
+            uiState.filterCurrencyState != Pair(true,true) ||
+            (uiState.filterCurFounded.isValid && (uiState.filterCurFounded.from != null || uiState.filterCurFounded.to != null)) ||
+            (uiState.filterCurExtinct.isValid && (uiState.filterCurExtinct.from != null || uiState.filterCurExtinct.to != null)))
         else -> false
     }
 
@@ -146,7 +167,8 @@ fun MainScreen(
         topBar = {
             Header(
                 isMenuEnabled = mainMenuOption!=null && mainMenuOption!=MenuOption.LOG_IN,
-                hasFilter = hasFilter,
+                hasFilter = hasFilter || (mainMenuOption == MenuOption.DENOMINATIONS && denHasFilter.value)
+                        || (mainMenuOption == MenuOption.YEARS && yearHasFilter.value),
                 onMenuClicked = { scope.launch {
                     bookmarksState.apply { close() }
                     headerMenuState.apply { if(isOpen) close() else open() }
@@ -164,10 +186,12 @@ fun MainScreen(
                         windowWidth = windowSize.widthSizeClass,
                         continents = mainViewModel.continents.values.toList(),
                         selectedContinentId = uiState.selectedContinent,
-                        onclick = {
+                        onClick = {
                             scope.launch { headerMenuState.apply { close() } }
                             scope.launch { bookmarksState.apply { close() } }
                             mainViewModel.setContinentFilter(it)
+                            denominationViewModel.setContinentFilter(it)
+                            issueYearViewModel.setContinentFilter(it)
                                   },
                     )
                 }
@@ -189,17 +213,31 @@ fun MainScreen(
             drawerPadding = innerPadding,
             onClickFilter = {
                 scope.launch { headerMenuState.apply { close() } }
-                if (mainMenuOption == MenuOption.COUNTRIES)
-                    mainViewModel.showTerritoryFilters(true)
-                if (mainMenuOption == MenuOption.CURRENCIES)
-                    mainViewModel.showCurrencyFilters(true)
+                when (mainMenuOption){
+                    MenuOption.COUNTRIES ->
+                        mainViewModel.showTerritoryFilters(true)
+                    MenuOption.CURRENCIES ->
+                        mainViewModel.showCurrencyFilters(true)
+                    MenuOption.DENOMINATIONS ->
+                        mainViewModel.showDenominationFilters(true)
+                    MenuOption.YEARS ->
+                        mainViewModel.showIssueYearFilters(true)
+                    else -> Unit
+                }
             },
             onClickStats = {
                 scope.launch { headerMenuState.apply { close() } }
-                if (mainMenuOption == MenuOption.COUNTRIES)
-                    mainViewModel.showTerritoryStats(true)
-                if (mainMenuOption == MenuOption.CURRENCIES)
-                    mainViewModel.showCurrencyStats(true)
+                when (mainMenuOption){
+                    MenuOption.COUNTRIES ->
+                        mainViewModel.showTerritoryStats(true)
+                    MenuOption.CURRENCIES ->
+                        mainViewModel.showCurrencyStats(true)
+                    MenuOption.DENOMINATIONS ->
+                        mainViewModel.showDenominationStats(true)
+                    MenuOption.YEARS ->
+                        mainViewModel.showIssueYearStats(true)
+                    else -> Unit
+                }
             },
             onClickSettings = {
                 scope.launch { headerMenuState.apply { close() } }
@@ -350,10 +388,73 @@ fun MainScreen(
                         }
                     }
                     composable(MenuOption.DENOMINATIONS.name) {
-                        Text("DENOMINATIONS")
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .background(color = MaterialTheme.colorScheme.surface)
+                                .fillMaxWidth()
+                                .padding(padding)
+                        ) {
+                            if (uiState.showDenominationStats) {
+                                DenominationStatsUI(
+                                    viewModel = denominationViewModel,
+                                    data = denominationViewModel.getDenominationStats(),
+                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
+                                    isLoggedIn = uiState.userLoggedIn,
+                                    onClose = {
+                                        mainViewModel.showDenominationStats(false)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            if (uiState.showDenominationFilters) {
+                                DenominationFiltersUI (
+                                    viewModel = denominationViewModel,
+                                    selectedContinent = uiState.selectedContinent,
+                                    onClose = {mainViewModel.showDenominationFilters(false)}
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            DenominationsView(
+                                viewModel = denominationViewModel,
+                                selectedContinent = uiState.selectedContinent,
+                                width = screenWidth - 2 * padding
+                            )
+                        }
                     }
                     composable(MenuOption.YEARS.name) {
-                        Text("YEARS")
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .background(color = MaterialTheme.colorScheme.surface)
+                                .fillMaxWidth()
+                                .padding(padding)
+                        ) {
+                            if (uiState.showIssueYearStats) {
+                                IssueYearStatsUI(
+                                    viewModel = issueYearViewModel,
+                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
+                                    isLoggedIn = uiState.userLoggedIn,
+                                    onClose = {
+                                        mainViewModel.showIssueYearStats(false)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            if (uiState.showIssueYearFilters) {
+                                IssueYearFiltersUI (
+                                    viewModel = issueYearViewModel,
+                                    selectedContinent = uiState.selectedContinent,
+                                    onClose = {mainViewModel.showIssueYearFilters(false)}
+                                )
+                                Spacer(modifier = Modifier.height(padding))
+                            }
+                            IssueYearsView(
+                                viewModel = issueYearViewModel,
+                                selectedContinent = uiState.selectedContinent,
+                                width = screenWidth - 2 * padding
+                            )
+                        }
                     }
                     composable(MenuOption.COLLECTION.name) {
                         Text("COLLECTION")
@@ -412,14 +513,3 @@ fun MainScreen(
     }
 }
 
-
-
-
-@Preview
-@Composable
-fun IMainScreenPreview() {
-    BanknotesCatalogTheme {
-
-        //MainScreen(WindowSizeClass.calculateFromSize(size = DpSize(400.dp,800.dp)), 400.dp, viewModel(factory = MainViewModel.Factory) )
-    }
-}

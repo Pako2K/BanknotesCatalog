@@ -9,4 +9,9 @@ class BanknotesNetworkDataSource (
     suspend fun getTerritoryStats() = client.getTerritoryStats()
     suspend fun getCurrencies() = client.getCurrencies()
     suspend fun getCurrencyStats() = client.getCurrencyStats()
+    suspend fun getDenominationStats(
+        fromYear : Int? = null,
+        toYear : Int? = null)
+            = client.getDenominationStats(fromYear, toYear)
+    suspend fun getIssueYearStats() = client.getIssueYearStats()
 }

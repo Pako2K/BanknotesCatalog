@@ -46,7 +46,7 @@ fun ContinentFilter (
     windowWidth: WindowWidthSizeClass,
     continents: List<Continent>,
     selectedContinentId: UInt? = null,
-    onclick: (clickedContinent : UInt) -> Unit
+    onClick: (selectedContinentId: UInt?) -> Unit
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start ContinentFilter")
 
@@ -74,7 +74,7 @@ fun ContinentFilter (
                         .padding(vertical = dimensionResource(id = R.dimen.small_padding)),
                     selectedContinentId = selectedContinentId,
                     continents = continents.subList(0, columns),
-                    onclick = onclick
+                    onClick = onClick
                 )
                 if (columns< continents.size)
                     ContinentFilterRow(
@@ -82,7 +82,7 @@ fun ContinentFilter (
                             .padding(bottom = dimensionResource(id = R.dimen.small_padding)),
                         selectedContinentId = selectedContinentId,
                         continents = continents.drop(columns),
-                        onclick = onclick
+                        onClick = onClick
                     )
             }
         }
@@ -94,7 +94,7 @@ fun ContinentFilterRow(
     continents: List<Continent>,
     selectedContinentId : UInt?,
     modifier : Modifier,
-    onclick: (clickedContinent : UInt) -> Unit
+    onClick: (selectedContinentId: UInt?) -> Unit
 ){
     Row(
         modifier = modifier
@@ -102,10 +102,11 @@ fun ContinentFilterRow(
             .fillMaxWidth()
     ) {
         for (cont in continents) {
+            val isSelected = cont.id == selectedContinentId
             ContinentItem(
                 continent = cont,
-                selected = cont.id == selectedContinentId,
-                onClick = onclick,
+                selected = isSelected,
+                onClick = {onClick(if(isSelected) null else cont.id)},
                 modifier = Modifier.weight(1f)
             )
         }
@@ -190,6 +191,6 @@ fun ContinentFilterPreview() {
                 Continent(6u, "Europe")
             ),
             selectedContinentId = 2u,
-            onclick = {})
+            onClick = {})
     }
 }

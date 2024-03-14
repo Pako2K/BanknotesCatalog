@@ -1,4 +1,4 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.repo
 
 import android.util.Log
 import androidx.datastore.core.DataStore

@@ -1,4 +1,4 @@
-package com.pako2k.banknotescatalog.data
+package com.pako2k.banknotescatalog.data.stats
 
 import kotlinx.serialization.Serializable
 

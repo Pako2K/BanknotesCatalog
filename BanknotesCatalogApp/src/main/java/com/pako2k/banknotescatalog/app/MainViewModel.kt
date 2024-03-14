@@ -8,38 +8,39 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
-import com.pako2k.banknotescatalog.data.BanknotesCatalogRepository
 import com.pako2k.banknotescatalog.data.Currency
-import com.pako2k.banknotescatalog.data.CurrencyFieldDenominations
-import com.pako2k.banknotescatalog.data.CurrencyFieldEnd
-import com.pako2k.banknotescatalog.data.CurrencyFieldIssues
-import com.pako2k.banknotescatalog.data.CurrencyFieldNotes
-import com.pako2k.banknotescatalog.data.CurrencyFieldPrice
-import com.pako2k.banknotescatalog.data.CurrencyFieldStart
-import com.pako2k.banknotescatalog.data.CurrencyFieldVariants
-import com.pako2k.banknotescatalog.data.CurrencySortableField
-import com.pako2k.banknotescatalog.data.CurrencySummaryStats
 import com.pako2k.banknotescatalog.data.FilterDates
-import com.pako2k.banknotescatalog.data.ShowPreferenceEnum
-import com.pako2k.banknotescatalog.data.ShowPreferences
-import com.pako2k.banknotescatalog.data.ShowPreferencesRepository
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryFieldCurrencies
-import com.pako2k.banknotescatalog.data.TerritoryFieldDenominations
-import com.pako2k.banknotescatalog.data.TerritoryFieldEnd
-import com.pako2k.banknotescatalog.data.TerritoryFieldIssues
-import com.pako2k.banknotescatalog.data.TerritoryFieldNotes
-import com.pako2k.banknotescatalog.data.TerritoryFieldPrice
-import com.pako2k.banknotescatalog.data.TerritoryFieldStart
-import com.pako2k.banknotescatalog.data.TerritoryFieldVariants
-import com.pako2k.banknotescatalog.data.TerritorySortableField
-import com.pako2k.banknotescatalog.data.TerritorySummaryStats
 import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
-import com.pako2k.banknotescatalog.data.UserPreferences
-import com.pako2k.banknotescatalog.data.UserPreferencesRepository
+import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldDenominations
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldEnd
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldIssues
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldNotes
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldPrice
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldStart
+import com.pako2k.banknotescatalog.data.repo.CurrencyFieldVariants
+import com.pako2k.banknotescatalog.data.repo.CurrencySortableField
+import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
+import com.pako2k.banknotescatalog.data.repo.ShowPreferences
+import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldCurrencies
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldDenominations
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldEnd
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldIssues
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldNotes
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldPrice
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldStart
+import com.pako2k.banknotescatalog.data.repo.TerritoryFieldVariants
+import com.pako2k.banknotescatalog.data.repo.TerritorySortableField
+import com.pako2k.banknotescatalog.data.repo.UserPreferences
+import com.pako2k.banknotescatalog.data.repo.UserPreferencesRepository
+import com.pako2k.banknotescatalog.data.stats.CurrencySummaryStats
+import com.pako2k.banknotescatalog.data.stats.TerritorySummaryStats
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
-private const val MAX_RETRIES = 2
+private const val MAX_RETRIES = 3
+private const val RETRY_INTERVAL = 1000L
 
 
 // Class implementing the Application Logic
@@ -62,7 +64,6 @@ class MainViewModel private constructor(
 
     // Private so it cannot be updated outside this MainViewModel
     private val _mainUiState = MutableStateFlow(MainUiState())
-
     // Public property to read the UI state
     val uiState = _mainUiState.asStateFlow()
 
@@ -70,6 +71,8 @@ class MainViewModel private constructor(
     private val _mainUiInitializationState = MutableStateFlow(MainUiInitializationState())
     // Public property to read the UI state
     val initializationState = _mainUiInitializationState.asStateFlow()
+
+
 
     val userPreferencesState = userPreferencesRepository.userPreferencesFlow.stateIn(
         scope = viewModelScope,
@@ -223,10 +226,10 @@ class MainViewModel private constructor(
                     territoriesViewData = repository.territories
                     retryCount = MAX_RETRIES
                     ComponentState.DONE
-
                 } catch (exc: Exception) {
                     Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                     retryCount++
+                    delay(RETRY_INTERVAL)
                     ComponentState.FAILED
                 }
             }
@@ -249,6 +252,7 @@ class MainViewModel private constructor(
                 } catch (exc: Exception) {
                     Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                     retryCount++
+                    delay(RETRY_INTERVAL)
                     ComponentState.FAILED
                 }
             }
@@ -273,6 +277,7 @@ class MainViewModel private constructor(
                 } catch (exc: Exception) {
                     Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                     retryCount++
+                    delay(RETRY_INTERVAL)
                     ComponentState.FAILED
                 }
             }
@@ -295,6 +300,7 @@ class MainViewModel private constructor(
                 } catch (exc: Exception) {
                     Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
                     retryCount++
+                    delay(RETRY_INTERVAL)
                     ComponentState.FAILED
                 }
             }
@@ -303,35 +309,55 @@ class MainViewModel private constructor(
             return@async result
         }.let { jobs.add(it) }
 
+        viewModelScope.async {
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getDenominationStats")
+
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchDenominationStats()
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    delay(RETRY_INTERVAL)
+                    ComponentState.FAILED
+                }
+            }
+
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getDenominationStats with $result")
+            return@async result
+        }.let { jobs.add(it) }
+
+        viewModelScope.async {
+            Log.d(ctx.getString(R.string.app_log_tag), "Start asynchronous getIssueYearStats")
+
+            var retryCount = 0
+            var result = ComponentState.LOADING
+            while (retryCount < MAX_RETRIES) {
+                result = try {
+                    repository.fetchIssueYearStats()
+                    retryCount = MAX_RETRIES
+                    ComponentState.DONE
+                } catch (exc: Exception) {
+                    Log.e(ctx.getString(R.string.app_log_tag), exc.toString() + " - " + exc.cause)
+                    retryCount++
+                    delay(RETRY_INTERVAL)
+                    ComponentState.FAILED
+                }
+            }
+
+            Log.d(ctx.getString(R.string.app_log_tag), "End asynchronous getIssueYearStats with $result")
+            return@async result
+        }.let { jobs.add(it) }
+
         viewModelScope.launch {
-            val preferences = showPreferencesRepository.showPreferencesFlow.first()
-            if (!preferences.showDates){
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldStart, false)
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldEnd, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldStart, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldEnd, false)
-            }
-            if (!preferences.showCurrencies)
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldCurrencies, false)
-            if (!preferences.showIssues) {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldIssues, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldIssues, false)
-            }
-            if (!preferences.showFaceValues) {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldDenominations, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldDenominations, false)
-            }
-            if (!preferences.showNoteTypes) {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldNotes, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldNotes, false)
-            }
-            if (!preferences.showVariants) {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldVariants, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldVariants, false)
-            }
-            if (!preferences.showPrice) {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldPrice, false)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldPrice, false)
+            showPreferencesRepository.showPreferencesFlow.first().let { preferences ->
+                preferences.map.forEach {
+                    if (!it.value) updateColVisibility(it.key, false)
+                }
             }
         }
 
@@ -383,41 +409,44 @@ class MainViewModel private constructor(
     }
 
     fun updateSettings(showPreference : ShowPreferenceEnum, value : Boolean ){
-
         viewModelScope.launch {
             showPreferencesRepository.updateShowPreference(showPreference, value)
         }
+        updateColVisibility(showPreference, value)
+    }
 
+    private fun updateColVisibility(showPreference : ShowPreferenceEnum, value : Boolean){
         when (showPreference){
-            ShowPreferenceEnum.KEY_SHOW_DATES -> {
+            ShowPreferenceEnum.SHOW_DATES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldStart, value)
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldEnd, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldStart, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldEnd, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_CUR -> {
+            ShowPreferenceEnum.SHOW_CUR -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldCurrencies, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_ISSUES -> {
+            ShowPreferenceEnum.SHOW_ISSUES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldIssues, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldIssues, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_VALUES -> {
+            ShowPreferenceEnum.SHOW_VALUES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldDenominations, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldDenominations, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_NOTES -> {
+            ShowPreferenceEnum.SHOW_NOTES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldNotes, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldNotes, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_VARIANTS -> {
+            ShowPreferenceEnum.SHOW_VARIANTS -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldVariants, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldVariants, value)
             }
-            ShowPreferenceEnum.KEY_SHOW_PRICES -> {
+            ShowPreferenceEnum.SHOW_PRICES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldPrice, value)
                 _mainUiState.value.currenciesTable.showCol(CurrencyFieldPrice, value)
             }
+            else -> Unit
         }
     }
 
@@ -433,19 +462,15 @@ class MainViewModel private constructor(
         return bookmark
     }
 
-    fun setContinentFilter(continentId : UInt) {
-        val newSelection =
-            if (continentId == uiState.value.selectedContinent) null
-            else continentId
-
+    fun setContinentFilter(selectedContinentId : UInt?) {
         _mainUiState.update { currentState ->
             currentState.copy(
-                selectedContinent = newSelection
+                selectedContinent = selectedContinentId
             )
         }
         filterTerritories()
         filterCurrencies()
-        repository.setStats(newSelection)
+        repository.setStats(selectedContinentId)
     }
 
     fun sortTerritoriesBy(sortBy : TerritorySortableField, statsCol : StatsSubColumn?) {
@@ -481,7 +506,6 @@ class MainViewModel private constructor(
         }
     }
 
-
     fun showTerritoryStats(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -496,6 +520,24 @@ class MainViewModel private constructor(
             currentState.copy(
                 showCurrencyStats = visible,
                 showCurrencyFilters = false
+            )
+        }
+    }
+
+    fun showDenominationStats(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showDenominationStats = visible,
+                showDenominationFilters = false
+            )
+        }
+    }
+
+    fun showIssueYearStats(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showIssueYearStats = visible,
+                showIssueYearFilters = false
             )
         }
     }
@@ -518,6 +560,23 @@ class MainViewModel private constructor(
         }
     }
 
+    fun showDenominationFilters(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showDenominationFilters = visible,
+                showDenominationStats = false
+            )
+        }
+    }
+
+    fun showIssueYearFilters(visible: Boolean){
+        _mainUiState.update { currentState ->
+            currentState.copy(
+                showIssueYearFilters = visible,
+                showIssueYearStats = false
+            )
+        }
+    }
 
     fun updateFilterTerritoryType(type : TerritoryTypeEnum, isSelected : Boolean){
         val newMap = _mainUiState.value.filterTerritoryTypes.mapValues { if(it.key == type) isSelected else it.value }
@@ -613,6 +672,8 @@ class MainViewModel private constructor(
         }
     }
 
+
+
     private fun filterTerritories() {
         val filterTerTypesToList = _mainUiState.value.filterTerritoryTypes.filter { it.value }.keys.toList().let {
             if (it.size == _mainUiState.value.filterTerritoryTypes.size) null else it
@@ -636,4 +697,5 @@ class MainViewModel private constructor(
             _mainUiState.value.filterCurExtinct
         )
     }
+
 }
