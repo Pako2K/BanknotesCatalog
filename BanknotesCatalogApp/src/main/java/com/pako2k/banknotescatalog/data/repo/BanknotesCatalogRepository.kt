@@ -263,7 +263,9 @@ class BanknotesCatalogRepository private constructor(
             tmp[type.value.name] = TerritorySummaryStats(current = TerritorySummaryStats.Data(currentCount,currentIssuerCount), extinct = TerritorySummaryStats.Data(extinctCount,extinctIssuerCount))
         }
         territorySummaryStats = tmp
+    }
 
+    fun setCurrencyStats(continentId: UInt?){
         val tmpCur = mutableMapOf<String, CurrencySummaryStats>()
         val currenciesByCont = if (continentId!= null) currencies.filter { it.continent.id == continentId } else currencies
 
@@ -287,7 +289,7 @@ class BanknotesCatalogRepository private constructor(
         currencySummaryStats = tmpCur
     }
 
-    fun setDenominationStats(continentId : UInt? = null){
+    fun setDenominationStats(continentId : UInt?){
         var totalExtinctCount = 0
         var totalCurrentCount = 0
         denominationCatStats.forEach {den ->

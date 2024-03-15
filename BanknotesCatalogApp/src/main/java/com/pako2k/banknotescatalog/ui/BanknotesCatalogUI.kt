@@ -43,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.app.ComponentState
+import com.pako2k.banknotescatalog.app.CurrencyViewModel
 import com.pako2k.banknotescatalog.app.DenominationViewModel
 import com.pako2k.banknotescatalog.app.IssueYearViewModel
 import com.pako2k.banknotescatalog.app.MainViewModel
@@ -60,8 +61,6 @@ import com.pako2k.banknotescatalog.ui.views.IssueYearsView
 import com.pako2k.banknotescatalog.ui.views.SettingsUI
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
-import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyFiltersUI
-import com.pako2k.banknotescatalog.ui.views.subviews.CurrencyStatsUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
 import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
@@ -94,6 +93,7 @@ fun BanknotesCatalogUI(
 fun MainScreen(
     windowSize : WindowSizeClass,
     mainViewModel : MainViewModel,
+    currencyViewModel : CurrencyViewModel = viewModel(factory = CurrencyViewModel.Factory),
     denominationViewModel : DenominationViewModel = viewModel(factory = DenominationViewModel.Factory),
     issueYearViewModel : IssueYearViewModel = viewModel(factory = IssueYearViewModel.Factory),
     navController : NavHostController = rememberNavController()
@@ -110,8 +110,10 @@ fun MainScreen(
     // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
 
+    val currencyHasFilter = currencyViewModel.currencyHasFilterState.collectAsState()
     val denHasFilter = denominationViewModel.denominationHasFilterState.collectAsState()
     val yearHasFilter = issueYearViewModel.issueYearHasFilterState.collectAsState()
+
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -134,6 +136,7 @@ fun MainScreen(
              options = showPreferences,
              onClick = { pref, value ->
                  mainViewModel.updateSettings(pref, value)
+                 currencyViewModel.updateSettings(pref, value)
                  denominationViewModel.updateSettings(pref, value)
                  issueYearViewModel.updateSettings(pref, value)
                        },
@@ -148,11 +151,6 @@ fun MainScreen(
             uiState.filterTerritoryTypes.containsValue(false) ||
             (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
             (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null)))
-        MenuOption.CURRENCIES ->
-            (uiState.filterCurrencyTypes != Pair(true,true) ||
-            uiState.filterCurrencyState != Pair(true,true) ||
-            (uiState.filterCurFounded.isValid && (uiState.filterCurFounded.from != null || uiState.filterCurFounded.to != null)) ||
-            (uiState.filterCurExtinct.isValid && (uiState.filterCurExtinct.from != null || uiState.filterCurExtinct.to != null)))
         else -> false
     }
 
@@ -162,6 +160,7 @@ fun MainScreen(
             Header(
                 isMenuEnabled = mainMenuOption!=null && mainMenuOption!=MenuOption.LOG_IN,
                 hasFilter = when(mainMenuOption){
+                    MenuOption.CURRENCIES -> currencyHasFilter.value
                     MenuOption.DENOMINATIONS -> denHasFilter.value
                     MenuOption.YEARS -> yearHasFilter.value
                     else -> hasFilter
@@ -187,6 +186,7 @@ fun MainScreen(
                             scope.launch { headerMenuState.apply { close() } }
                             scope.launch { bookmarksState.apply { close() } }
                             mainViewModel.setContinentFilter(it)
+                            currencyViewModel.setContinentFilter(it)
                             denominationViewModel.setContinentFilter(it)
                             issueYearViewModel.setContinentFilter(it)
                                   },
@@ -214,7 +214,7 @@ fun MainScreen(
                     MenuOption.COUNTRIES ->
                         mainViewModel.showTerritoryFilters(true)
                     MenuOption.CURRENCIES ->
-                        mainViewModel.showCurrencyFilters(true)
+                        currencyViewModel.showFilters(true)
                     MenuOption.DENOMINATIONS ->
                         denominationViewModel.showFilters(true)
                     MenuOption.YEARS ->
@@ -228,7 +228,7 @@ fun MainScreen(
                     MenuOption.COUNTRIES ->
                         mainViewModel.showTerritoryStats(true)
                     MenuOption.CURRENCIES ->
-                        mainViewModel.showCurrencyStats(true)
+                        currencyViewModel.showStats(true)
                     MenuOption.DENOMINATIONS ->
                         denominationViewModel.showStats(true)
                     MenuOption.YEARS ->
@@ -337,52 +337,19 @@ fun MainScreen(
                         }
                     }
                     composable(MenuOption.CURRENCIES.name) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .background(color = MaterialTheme.colorScheme.surface)
-                                .fillMaxWidth()
-                                .padding(padding)
-                        ) {
-                            if (uiState.showCurrencyStats) {
-                                CurrencyStatsUI(
-                                    data = mainViewModel.getCurrencyStats(),
-                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
-                                    isLoggedIn = uiState.userLoggedIn,
-                                    onClose = {
-                                        mainViewModel.showCurrencyStats(false)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(padding))
+                        CurrenciesView(
+                            viewModel = currencyViewModel,
+                            width = screenWidth - 2 * padding,
+                            windowHeightClass = windowSize.heightSizeClass,
+                            isLogged = uiState.userLoggedIn,
+                            selectedContinent = uiState.selectedContinent?.let { mainViewModel.continents[it] },
+                            onCurrencyClick = {
+                                navController.navigate("CURRENCY/$it")
+                            },
+                            onCountryClick = {
+                                navController.navigate("COUNTRY/$it")
                             }
-                            if (uiState.showCurrencyFilters) {
-                                CurrencyFiltersUI (
-                                    curTypeFilters = uiState.filterCurrencyTypes,
-                                    curStateFilters = uiState.filterCurrencyState,
-                                    curFoundedFilter = uiState.filterCurFounded,
-                                    curExtinctFilter = uiState.filterCurExtinct,
-                                    onCurTypeChanged = {mainViewModel.updateFilterCurrencyType(it)},
-                                    onCurStateChanged = {mainViewModel.updateFilterCurrencyState(it)},
-                                    onCurFoundedChanged = {mainViewModel.updateFilterCurrencyFoundedDates(it)},
-                                    onCurExtinctChanged = {mainViewModel.updateFilterCurrencyExtinctDates(it)},
-                                    onClose = {mainViewModel.showCurrencyFilters(false)}
-                                )
-                                Spacer(modifier = Modifier.height(padding))
-                            }
-                            if ((!uiState.showCurrencyStats && !uiState.showCurrencyFilters) || windowSize.heightSizeClass != WindowHeightSizeClass.Compact)
-                                CurrenciesView(
-                                    width = screenWidth - 2 * padding,
-                                    table = uiState.currenciesTable,
-                                    data = mainViewModel.currenciesViewDataUI,
-                                    onCurrencyClick = {
-                                        navController.navigate("CURRENCY/$it")
-                                    },
-                                    onCountryClick = {
-                                        navController.navigate("COUNTRY/$it")
-                                    },
-                                    sortCallback = { field, statsCol -> mainViewModel.sortCurrenciesBy(field, statsCol) }
-                                )
-                        }
+                        )
                     }
                     composable(MenuOption.DENOMINATIONS.name) {
                         DenominationsView(

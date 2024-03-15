@@ -13,14 +13,6 @@ import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldDenominations
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldEnd
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldIssues
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldNotes
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldPrice
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldStart
-import com.pako2k.banknotescatalog.data.repo.CurrencyFieldVariants
-import com.pako2k.banknotescatalog.data.repo.CurrencySortableField
 import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
 import com.pako2k.banknotescatalog.data.repo.ShowPreferences
 import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
@@ -35,7 +27,6 @@ import com.pako2k.banknotescatalog.data.repo.TerritoryFieldVariants
 import com.pako2k.banknotescatalog.data.repo.TerritorySortableField
 import com.pako2k.banknotescatalog.data.repo.UserPreferences
 import com.pako2k.banknotescatalog.data.repo.UserPreferencesRepository
-import com.pako2k.banknotescatalog.data.stats.CurrencySummaryStats
 import com.pako2k.banknotescatalog.data.stats.TerritorySummaryStats
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -137,44 +128,6 @@ class MainViewModel private constructor(
         return ter
     }
 
-
-    private var currenciesViewData : List<Currency> = listOf()
-        set(value) {
-            field = value
-
-            val uiData : MutableList<List<Any?>> = mutableListOf()
-            for(cur in value){
-                val ownedBy = cur.ownedBy.maxBy { it.start }
-                val stats = repository.currencyCatStats.find { it.id == cur.id }
-                uiData.add(
-                    listOf(
-                        cur.iso3 ?: "",
-                        Pair(cur.id, cur.name),
-                        Pair(ownedBy.territory.id, ownedBy.territory.name),
-                        cur.startYear.toString(),
-                        cur.endYear?.toString() ?: "",
-                        stats?.numSeries.toString(),
-                        "-",
-                        stats?.numDenominations.toString(),
-                        "-",
-                        stats?.numNotes.toString(),
-                        "-",
-                        stats?.numVariants.toString(),
-                        "-",
-                        "-"
-                    )
-                )
-            }
-            currenciesViewDataUI = uiData
-        }
-
-    /*
-        Field values for the Summary Table
-        Property automatically set when the currenciesViewData is modified
-    */
-    lateinit var currenciesViewDataUI : List<List<Any?>>
-        private set
-
     fun currencyViewData(curId : UInt) : Currency? {
         val cur = (repository.currencies.find{ it.id == curId })
         cur?.extend(territoriesList = repository.territories, flags = repository.flags, currenciesList = repository.currencies)
@@ -185,9 +138,6 @@ class MainViewModel private constructor(
         return repository.territorySummaryStats
     }
 
-    fun getCurrencyStats() : Map<String, CurrencySummaryStats> {
-        return repository.currencySummaryStats
-    }
 
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
@@ -270,8 +220,6 @@ class MainViewModel private constructor(
             while (retryCount < MAX_RETRIES) {
                 result = try {
                     repository.fetchCurrencies()
-
-                    currenciesViewData = repository.currencies
                     retryCount = MAX_RETRIES
                     ComponentState.DONE
                 } catch (exc: Exception) {
@@ -420,31 +368,24 @@ class MainViewModel private constructor(
             ShowPreferenceEnum.SHOW_DATES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldStart, value)
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldEnd, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldStart, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldEnd, value)
             }
             ShowPreferenceEnum.SHOW_CUR -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldCurrencies, value)
             }
             ShowPreferenceEnum.SHOW_ISSUES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldIssues, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldIssues, value)
             }
             ShowPreferenceEnum.SHOW_VALUES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldDenominations, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldDenominations, value)
             }
             ShowPreferenceEnum.SHOW_NOTES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldNotes, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldNotes, value)
             }
             ShowPreferenceEnum.SHOW_VARIANTS -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldVariants, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldVariants, value)
             }
             ShowPreferenceEnum.SHOW_PRICES -> {
                 _mainUiState.value.territoriesTable.showCol(TerritoryFieldPrice, value)
-                _mainUiState.value.currenciesTable.showCol(CurrencyFieldPrice, value)
             }
             else -> Unit
         }
@@ -469,7 +410,6 @@ class MainViewModel private constructor(
             )
         }
         filterTerritories()
-        filterCurrencies()
         repository.setStats(selectedContinentId)
     }
 
@@ -490,22 +430,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun sortCurrenciesBy(sortBy : CurrencySortableField, statsCol : StatsSubColumn?) {
-        _mainUiState.value.currenciesTable.sortBy(_mainUiState.value.currenciesTable.getCol(sortBy)?:1, statsCol)
-        val sortedColumn = _mainUiState.value.currenciesTable.sortedBy
-        val newSortingDir = _mainUiState.value.currenciesTable.columns[sortedColumn].sortedDirection!!
-
-        repository.sortCurrencies(sortBy, statsCol, newSortingDir)
-
-        filterCurrencies()
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                summaryTableTriggerUpdateFlag = !currentState.summaryTableTriggerUpdateFlag
-            )
-        }
-    }
-
     fun showTerritoryStats(visible: Boolean){
         _mainUiState.update { currentState ->
             currentState.copy(
@@ -515,14 +439,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun showCurrencyStats(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showCurrencyStats = visible,
-                showCurrencyFilters = false
-            )
-        }
-    }
 
     fun showTerritoryFilters(visible: Boolean){
         _mainUiState.update { currentState ->
@@ -533,14 +449,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun showCurrencyFilters(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showCurrencyFilters = visible,
-                showCurrencyStats = false
-            )
-        }
-    }
 
     fun updateFilterTerritoryType(type : TerritoryTypeEnum, isSelected : Boolean){
         val newMap = _mainUiState.value.filterTerritoryTypes.mapValues { if(it.key == type) isSelected else it.value }
@@ -590,53 +498,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun updateFilterCurrencyType(isSelected : Pair<Boolean, Boolean>){
-        // At least one state must be true!!
-        if (!isSelected.first && !isSelected.second) return
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterCurrencyTypes = isSelected
-            )
-        }
-        filterCurrencies()
-    }
-
-    fun updateFilterCurrencyState(isSelected : Pair<Boolean, Boolean>){
-        // At least one state must be true!!
-        if (!isSelected.first && !isSelected.second) return
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterCurrencyState = isSelected
-            )
-        }
-        filterCurrencies()
-    }
-
-    fun updateFilterCurrencyFoundedDates(dates : FilterDates){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterCurFounded = dates
-            )
-        }
-        if (dates.isValid) {
-            filterCurrencies()
-        }
-    }
-
-    fun updateFilterCurrencyExtinctDates(dates : FilterDates){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterCurExtinct = dates
-            )
-        }
-        if (dates.isValid) {
-            filterCurrencies()
-        }
-    }
-
-
 
     private fun filterTerritories() {
         val filterTerTypesToList = _mainUiState.value.filterTerritoryTypes.filter { it.value }.keys.toList().let {
@@ -649,16 +510,6 @@ class MainViewModel private constructor(
             _mainUiState.value.filterTerritoryState.second,
             _mainUiState.value.filterTerFounded,
             _mainUiState.value.filterTerExtinct
-        )
-    }
-
-    private fun filterCurrencies() {
-        currenciesViewData = repository.getCurrencies(
-            _mainUiState.value.selectedContinent,
-            _mainUiState.value.filterCurrencyTypes,
-            _mainUiState.value.filterCurrencyState,
-            _mainUiState.value.filterCurFounded,
-            _mainUiState.value.filterCurExtinct
         )
     }
 

@@ -96,7 +96,7 @@ class DenominationViewModel private constructor(
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT DenominationViewModel")
 
-        repository.setDenominationStats()
+        repository.setDenominationStats(null)
         // At this point the repository is already initialized
         setDenominationsViewDataUI(null)
     }
