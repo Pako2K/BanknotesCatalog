@@ -31,4 +31,12 @@
     <string name="cur_menu_stats">Stats</string>
     <string name="cur_menu_info">Info</string>
 
+    <string name="login_username">User name</string>
+    <string name="login_password">Password</string>
+    <string name="login_title">Log in to manage your collection</string>
+    <string name="login_invalid">Enter a valid user and password</string>
+    <string name="login_button">Log in</string>
+    <string name="login_signup_button">Sign-up</string>
+    <string name="login_change_pwd">Change Password</string>
+    <string name="login_reset_pwd">Password forgotten?</string>
 </resources>

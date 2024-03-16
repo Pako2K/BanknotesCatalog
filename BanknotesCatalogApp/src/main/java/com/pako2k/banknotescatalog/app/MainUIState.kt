@@ -25,6 +25,7 @@ data class MainUiState (
     val selectedContinent: UInt? = null,
 
     val userLoggedIn : Boolean = false,
+    val sessionId : String? = null,
 
     val summaryTableTriggerUpdateFlag : Boolean = false,
 

@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -46,6 +45,7 @@ import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.CurrencyViewModel
 import com.pako2k.banknotescatalog.app.DenominationViewModel
 import com.pako2k.banknotescatalog.app.IssueYearViewModel
+import com.pako2k.banknotescatalog.app.LoginViewModel
 import com.pako2k.banknotescatalog.app.MainViewModel
 import com.pako2k.banknotescatalog.ui.parts.Bookmarks
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
@@ -54,10 +54,12 @@ import com.pako2k.banknotescatalog.ui.parts.Header
 import com.pako2k.banknotescatalog.ui.parts.HeaderMenu
 import com.pako2k.banknotescatalog.ui.parts.MainMenu
 import com.pako2k.banknotescatalog.ui.parts.MenuOption
+import com.pako2k.banknotescatalog.ui.views.CollectionView
 import com.pako2k.banknotescatalog.ui.views.CurrenciesView
 import com.pako2k.banknotescatalog.ui.views.CurrencyView
 import com.pako2k.banknotescatalog.ui.views.DenominationsView
 import com.pako2k.banknotescatalog.ui.views.IssueYearsView
+import com.pako2k.banknotescatalog.ui.views.LoginView
 import com.pako2k.banknotescatalog.ui.views.SettingsUI
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
@@ -96,6 +98,7 @@ fun MainScreen(
     currencyViewModel : CurrencyViewModel = viewModel(factory = CurrencyViewModel.Factory),
     denominationViewModel : DenominationViewModel = viewModel(factory = DenominationViewModel.Factory),
     issueYearViewModel : IssueYearViewModel = viewModel(factory = IssueYearViewModel.Factory),
+    loginViewModel: LoginViewModel =  viewModel(factory = LoginViewModel.Factory),
     navController : NavHostController = rememberNavController()
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
@@ -368,10 +371,13 @@ fun MainScreen(
                         )
                     }
                     composable(MenuOption.COLLECTION.name) {
-                        Text("COLLECTION")
+                        CollectionView()
                     }
                     composable(MenuOption.LOG_IN.name) {
-                        Text("SIGN IN / SIGN UP")
+                        LoginView(loginViewModel){sessionId,_,_ ->
+                            mainViewModel.userLogged(sessionId)
+                            navController.navigate("COLLECTION")
+                        }
                     }
                     composable(
                         "COUNTRY/{id}",
