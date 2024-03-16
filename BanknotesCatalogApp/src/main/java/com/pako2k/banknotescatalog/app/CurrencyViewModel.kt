@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
@@ -19,15 +20,19 @@ import com.pako2k.banknotescatalog.data.repo.CurrencyFieldStart
 import com.pako2k.banknotescatalog.data.repo.CurrencyFieldVariants
 import com.pako2k.banknotescatalog.data.repo.CurrencySortableField
 import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
+import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
 import com.pako2k.banknotescatalog.data.stats.CurrencySummaryStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 
 class CurrencyViewModel private constructor(
     ctx: Context,
     private val repository : BanknotesCatalogRepository,
+    private val showPreferencesRepository: ShowPreferencesRepository
 ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -88,6 +93,7 @@ class CurrencyViewModel private constructor(
                 CurrencyViewModel(
                     application.applicationContext,
                     application.repository,
+                    application.showPreferencesRepository
                 )
             }
         }
@@ -95,6 +101,14 @@ class CurrencyViewModel private constructor(
 
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT CurrencyViewModel")
+
+        viewModelScope.launch {
+            showPreferencesRepository.showPreferencesFlow.first().let { preferences ->
+                preferences.map.forEach {
+                    if (!it.value) updateSettings(it.key, false)
+                }
+            }
+        }
 
         // At this point the repository is already initialized
         currenciesViewData = repository.currencies

@@ -17,10 +17,12 @@ import com.pako2k.banknotescatalog.data.repo.DenomFieldTerritories
 import com.pako2k.banknotescatalog.data.repo.DenomFieldVariants
 import com.pako2k.banknotescatalog.data.repo.DenomSortableField
 import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
+import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
 import com.pako2k.banknotescatalog.data.stats.DenomTotalStats
 import com.pako2k.banknotescatalog.data.stats.DenominationSummaryStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -29,6 +31,7 @@ import java.text.DecimalFormat
 class DenominationViewModel private constructor(
     ctx: Context,
     private val repository : BanknotesCatalogRepository,
+    private val showPreferencesRepository: ShowPreferencesRepository
 ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -88,6 +91,7 @@ class DenominationViewModel private constructor(
                 DenominationViewModel(
                     application.applicationContext,
                     application.repository,
+                    application.showPreferencesRepository
                 )
             }
         }
@@ -95,6 +99,14 @@ class DenominationViewModel private constructor(
 
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT DenominationViewModel")
+
+        viewModelScope.launch {
+            showPreferencesRepository.showPreferencesFlow.first().let { preferences ->
+                preferences.map.forEach {
+                    if (!it.value) updateSettings(it.key, false)
+                }
+            }
+        }
 
         repository.setDenominationStats(null)
         // At this point the repository is already initialized

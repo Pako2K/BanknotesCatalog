@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
@@ -18,16 +19,20 @@ import com.pako2k.banknotescatalog.data.repo.IssueYearFieldValue
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldVariants
 import com.pako2k.banknotescatalog.data.repo.IssueYearSortableField
 import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
+import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
 import com.pako2k.banknotescatalog.data.stats.IssueYearSummaryStats
 import com.pako2k.banknotescatalog.data.stats.IssueYearTotalStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 
 class IssueYearViewModel private constructor(
     ctx: Context,
     private val repository : BanknotesCatalogRepository,
+    private val showPreferencesRepository: ShowPreferencesRepository
 ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -102,6 +107,7 @@ class IssueYearViewModel private constructor(
                 IssueYearViewModel(
                     application.applicationContext,
                     application.repository,
+                    application.showPreferencesRepository
                 )
             }
         }
@@ -109,6 +115,14 @@ class IssueYearViewModel private constructor(
 
     init {
         Log.d(ctx.getString(R.string.app_log_tag), "Start INIT IssueYearViewModel")
+
+        viewModelScope.launch {
+            showPreferencesRepository.showPreferencesFlow.first().let { preferences ->
+                preferences.map.forEach {
+                    if (!it.value) updateSettings(it.key, false)
+                }
+            }
+        }
 
         // At this point the repository is already initialized
         setIssueYearsViewDataUI(null)
