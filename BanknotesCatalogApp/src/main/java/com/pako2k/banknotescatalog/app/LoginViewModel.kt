@@ -78,9 +78,4 @@ class LoginViewModel private constructor(
         }
         return sessionId
     }
-
-    fun logOut(sessionId : String) : Boolean {
-        return sessionId.isNotEmpty()
-    }
-
 }
