@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,7 +21,6 @@ class LoginViewModel private constructor(
     private val _loginUIState = MutableStateFlow(LoginUIState())
     // Public property to read the UI state
     val loginUIState = _loginUIState.asStateFlow()
-
 
     // ViewModel can only be created by ViewModelProvider.Factory
     companion object {
@@ -58,24 +58,44 @@ class LoginViewModel private constructor(
         }
     }
 
-    fun logIn() : String {
-        var sessionId = ""
+    suspend fun logIn() : String? {
+        _loginUIState.update { currentState ->
+            currentState.copy(
+                loginState = ComponentState.LOADING
+            )
+        }
+
+                delay(2000)  // Call to the Login API
+        var sessionId : String? = null
 
         if (loginUIState.value.username == "PACO" &&
-            loginUIState.value.password == "XYZ"){
+            loginUIState.value.password == "XYZ"
+        ) {
             sessionId = "session-id"
+
             _loginUIState.update { currentState ->
                 currentState.copy(
-                    isInvalidUserPwd = false
+                    isInvalidUserPwd = false,
+                    sessionId = sessionId
                 )
             }
-        } else{
+
+            delay(1000)  // Call to the Collection Stats API
+
+        } else {
             _loginUIState.update { currentState ->
                 currentState.copy(
                     isInvalidUserPwd = true
                 )
             }
         }
+
+        _loginUIState.update { currentState ->
+            currentState.copy(
+                loginState = ComponentState.DONE
+            )
+        }
+
         return sessionId
     }
 }

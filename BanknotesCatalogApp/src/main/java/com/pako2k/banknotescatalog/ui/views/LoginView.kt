@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.dimensionResource
@@ -47,6 +49,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pako2k.banknotescatalog.R
+import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.LoginViewModel
 import com.pako2k.banknotescatalog.ui.theme.md_theme_light_shadow
 import kotlinx.coroutines.launch
@@ -71,9 +74,7 @@ fun LoginView(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(vertical = dimensionResource(id = R.dimen.xl_padding))
             .verticalScroll(rememberScrollState())
-
     ){
         Text(
             text = stringResource(id = R.string.login_title),
@@ -108,56 +109,81 @@ fun LoginView(
                     bottom = dimensionResource(id = R.dimen.xl_padding)
                 )
         )
-        ElevatedButton(
-            onClick = {
-                val prevState = loginUiState.value.isInvalidUserPwd
-                val sessionId = viewModel.logIn()
-                if (sessionId.isNotEmpty())
-                    onLoggedIn(sessionId, loginUiState.value.username, loginUiState.value.password)
-                else
-                    if(!prevState)
+        Box(
+            contentAlignment = Alignment.Center,
+        ){
+            Column (
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                .alpha(if (loginUiState.value.loginState == ComponentState.LOADING) 0f else 1f)
+            ){
+                ElevatedButton(
+                    enabled = !loginUiState.value.isInvalidUserPwd,
+                    onClick = {
+                        val prevState = loginUiState.value.isInvalidUserPwd
                         scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = invalidMsg,
-                                duration = SnackbarDuration.Short
-                            )
+                            val sessionId = viewModel.logIn()
+                            if (!sessionId.isNullOrEmpty())
+                                onLoggedIn(
+                                    sessionId,
+                                    loginUiState.value.username,
+                                    loginUiState.value.password
+                                )
+                            else
+                                if (!prevState)
+                                    snackbarHostState.showSnackbar(
+                                        message = invalidMsg,
+                                        duration = SnackbarDuration.Short
+                                    )
                         }
                     },
-            shape = MaterialTheme.shapes.extraLarge,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            ),
-            elevation = ButtonDefaults.elevatedButtonElevation(8.dp),
-            contentPadding = PaddingValues(horizontal = dimensionResource(id = R.dimen.xxl_padding)),
-            modifier = Modifier.focusable(true)
-        ) {
-            Text(
-                text = stringResource(id = R.string.login_button),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    ),
+                    elevation = ButtonDefaults.elevatedButtonElevation(8.dp),
+                    contentPadding = PaddingValues(horizontal = dimensionResource(id = R.dimen.xxl_padding)),
+                    modifier = Modifier.focusable(true)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.login_button),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
 
-        TextButton(onClick = { /*TODO*/ }) {
-            Text(
-                text = stringResource(id = R.string.login_signup_button),
-                textDecoration = TextDecoration.Underline,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        TextButton(onClick = { /*TODO*/ }) {
-            Text(
-                text = stringResource(id = R.string.login_change_pwd),
-                textDecoration = TextDecoration.Underline,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        TextButton(onClick = { /*TODO*/ }) {
-            Text(
-                text = stringResource(id = R.string.login_reset_pwd),
-                textDecoration = TextDecoration.Underline,
-                style = MaterialTheme.typography.bodyMedium
-            )
+                TextButton(onClick = { /*TODO*/ }) {
+                    Text(
+                        text = stringResource(id = R.string.login_signup_button),
+                        textDecoration = TextDecoration.Underline,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                TextButton(onClick = { /*TODO*/ }) {
+                    Text(
+                        text = stringResource(id = R.string.login_change_pwd),
+                        textDecoration = TextDecoration.Underline,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                TextButton(onClick = { /*TODO*/ }) {
+                    Text(
+                        text = stringResource(id = R.string.login_reset_pwd),
+                        textDecoration = TextDecoration.Underline,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            if (loginUiState.value.loginState == ComponentState.LOADING) {
+                Box{
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.secondary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier
+                            .width(44.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -165,7 +191,7 @@ fun LoginView(
     Box(
         modifier = Modifier
             .padding(top = dimensionResource(id = R.dimen.medium_padding))
-             .fillMaxWidth()
+            .fillMaxWidth()
     ) {
         SnackbarHost(
             hostState = snackbarHostState,
@@ -215,10 +241,11 @@ fun InputField(
             onValueChange(it)
         },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.background,
-            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+            focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+            unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
             focusedPlaceholderColor = Color.Transparent,
-            unfocusedPlaceholderColor = md_theme_light_shadow
+            unfocusedPlaceholderColor = md_theme_light_shadow,
+            errorContainerColor = MaterialTheme.colorScheme.onPrimary
         ),
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
         visualTransformation = if (isPassword) {

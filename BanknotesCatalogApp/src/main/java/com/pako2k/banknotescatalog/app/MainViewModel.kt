@@ -513,11 +513,10 @@ class MainViewModel private constructor(
         )
     }
 
-    fun userLogged(sessionId: String?) {
+    fun userLogged() {
         _mainUiState.update { currentState ->
             currentState.copy(
-                userLoggedIn = true,
-                sessionId = sessionId
+                userLoggedIn = true
             )
         }
     }

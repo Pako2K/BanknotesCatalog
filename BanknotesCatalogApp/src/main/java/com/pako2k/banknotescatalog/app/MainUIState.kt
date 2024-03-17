@@ -24,9 +24,6 @@ data class MainUiInitializationState (
 data class MainUiState (
     val selectedContinent: UInt? = null,
 
-    val userLoggedIn : Boolean = false,
-    val sessionId : String? = null,
-
     val summaryTableTriggerUpdateFlag : Boolean = false,
 
     // Summary tables (updated when sorting is changed)
@@ -56,5 +53,7 @@ data class MainUiState (
     val filterTerritoryTypes : Map<TerritoryTypeEnum, Boolean> = TerritoryTypeEnum.values().associateWith { true },
     val filterTerritoryState : Pair<Boolean,Boolean> = Pair(true,true),
     val filterTerFounded : FilterDates = FilterDates(null,null),
-    val filterTerExtinct : FilterDates = FilterDates(null,null)
+    val filterTerExtinct : FilterDates = FilterDates(null,null),
+
+    val userLoggedIn : Boolean = false
 )

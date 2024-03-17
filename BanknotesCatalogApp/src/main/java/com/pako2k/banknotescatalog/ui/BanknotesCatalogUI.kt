@@ -374,9 +374,14 @@ fun MainScreen(
                         CollectionView()
                     }
                     composable(MenuOption.LOG_IN.name) {
+                        // This can happen right after log in or when pressing the back button after logging in
+                        if (uiState.userLoggedIn) {
+                            navController.popBackStack()
+                            navController.navigate(MenuOption.COLLECTION.name)
+                        }
+
                         LoginView(loginViewModel){sessionId,_,_ ->
-                            mainViewModel.userLogged(sessionId)
-                            navController.navigate("COLLECTION")
+                            mainViewModel.userLogged()
                         }
                     }
                     composable(
