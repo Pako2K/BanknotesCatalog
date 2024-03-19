@@ -177,6 +177,7 @@ class BanknotesCatalogRepository private constructor(
         }
     }
 
+    suspend fun getUserSession(username : String, password : String) = banknotesNetworkDataSource.getUserSession(username, password)
 
     suspend fun fetchContinents() {
         val cache = continentCacheRepository.continentCacheFlow.first()

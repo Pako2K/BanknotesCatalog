@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginView(
     viewModel: LoginViewModel,
-    onLoggedIn : (sessionId : String?, username : String, password : String) -> Unit
+    onLoggedIn : () -> Unit
 ){
     Log.d(stringResource(id = R.string.app_log_tag), "Start Login")
 
@@ -66,6 +66,7 @@ fun LoginView(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val invalidMsg = stringResource(id = R.string.login_invalid)
+    val errorMsg = stringResource(id = R.string.login_error)
 
 
     Column(
@@ -122,17 +123,14 @@ fun LoginView(
                     onClick = {
                         val prevState = loginUiState.value.isInvalidUserPwd
                         scope.launch {
-                            val sessionId = viewModel.logIn()
-                            if (!sessionId.isNullOrEmpty())
-                                onLoggedIn(
-                                    sessionId,
-                                    loginUiState.value.username,
-                                    loginUiState.value.password
-                                )
+                            viewModel.logIn()
+                            val session = viewModel.userSession
+                            if (session != null && session.id.isNotEmpty())
+                                onLoggedIn()
                             else
                                 if (!prevState)
                                     snackbarHostState.showSnackbar(
-                                        message = invalidMsg,
+                                        message = if (viewModel.loginError.isNullOrEmpty()) invalidMsg else "$errorMsg : ${viewModel.loginError}",
                                         duration = SnackbarDuration.Short
                                     )
                         }

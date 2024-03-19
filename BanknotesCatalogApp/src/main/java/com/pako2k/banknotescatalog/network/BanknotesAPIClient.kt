@@ -5,20 +5,26 @@ import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryType
+import com.pako2k.banknotescatalog.data.UserSession
 import com.pako2k.banknotescatalog.data.stats.CurrencyStats
 import com.pako2k.banknotescatalog.data.stats.DenominationStats
 import com.pako2k.banknotescatalog.data.stats.IssueYearStats
 import com.pako2k.banknotescatalog.data.stats.TerritoryStats
 import kotlinx.serialization.json.Json
+import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 
 interface BanknotesAPIService{
+    @GET("/user/session")
+    suspend fun getUserSession(@Header("Authorization") basicAuthorization : String) : UserSession
+
     @GET("continent")
     suspend fun getContinents() : List<Continent>
 
@@ -69,6 +75,11 @@ class BanknotesAPIClient (
         retrofit.create(BanknotesAPIService::class.java)
     }
 
+    suspend fun getUserSession(username : String, password : String) : UserSession {
+        // Generate Basic Authorization string
+        val credential = Credentials.basic(username,password)
+        return retrofitService.getUserSession(credential)
+    }
     suspend fun getContinents() = retrofitService.getContinents()
     suspend fun getTerritoryTypes()  = retrofitService.getTerritoryTypes()
     suspend fun getTerritories() = retrofitService.getTerritories()

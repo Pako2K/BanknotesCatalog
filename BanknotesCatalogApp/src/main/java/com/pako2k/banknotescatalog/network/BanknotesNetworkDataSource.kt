@@ -1,8 +1,11 @@
 package com.pako2k.banknotescatalog.network
 
+import com.pako2k.banknotescatalog.data.UserSession
+
 class BanknotesNetworkDataSource (
     private val client: BanknotesAPIClient,
 ) {
+    suspend fun getUserSession(username : String, password : String) : UserSession = client.getUserSession(username, password)
     suspend fun getContinents() = client.getContinents()
     suspend fun getTerritoryTypes()  = client.getTerritoryTypes()
     suspend fun getTerritories() = client.getTerritories()

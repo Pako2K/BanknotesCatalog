@@ -14,7 +14,6 @@ import java.io.IOException
 private const val DELIMITER = ","
 private const val HISTORY_DEPTH = 5
 
-
 /**
  * Data Class with the user preferences
  */
@@ -24,7 +23,6 @@ data class UserPreferences(
     val historyTerritories : List<UInt> = listOf(),
     val historyCurrencies : List<UInt> = listOf(),
 )
-
 
 /**
  * Class that handles saving and retrieving user preferences

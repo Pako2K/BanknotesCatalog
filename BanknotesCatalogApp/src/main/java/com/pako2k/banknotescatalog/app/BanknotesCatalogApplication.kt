@@ -8,6 +8,7 @@ import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
 import com.pako2k.banknotescatalog.data.repo.ContinentCacheRepository
 import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
 import com.pako2k.banknotescatalog.data.repo.TerritoryTypeCacheRepository
+import com.pako2k.banknotescatalog.data.repo.UserCredentialsRepository
 import com.pako2k.banknotescatalog.data.repo.UserPreferencesRepository
 import com.pako2k.banknotescatalog.network.BanknotesAPIClient
 
@@ -16,6 +17,7 @@ private const val CONTINENT_CACHE_NAME = "banknotes_continent_cache"
 private const val TER_TYPE_CACHE_NAME = "banknotes_ter_type_cache"
 private const val USER_PREFERENCES_NAME = "banknotes_user_preferences"
 private const val SHOW_PREFERENCES_NAME = "banknotes_show_preferences"
+private const val USER_CREDENTIALS_NAME = "banknotes_user_credentials"
 
 // Local datastore's
 private val Context.appUserDataStore by preferencesDataStore (
@@ -30,10 +32,14 @@ private val Context.appContinentCacheStore by preferencesDataStore (
 private val Context.appTerTypeCacheStore by preferencesDataStore (
     name = TER_TYPE_CACHE_NAME
 )
+private val Context.appUserCredentialsStore by preferencesDataStore (
+    name = USER_CREDENTIALS_NAME
+)
 
 class BanknotesCatalogApplication : Application() {
     lateinit var userPreferencesRepository : UserPreferencesRepository
     lateinit var showPreferencesRepository : ShowPreferencesRepository
+    lateinit var userCredentialsRepository : UserCredentialsRepository
     lateinit var repository : BanknotesCatalogRepository
 
     override fun onCreate() {
@@ -45,6 +51,7 @@ class BanknotesCatalogApplication : Application() {
 
         userPreferencesRepository = UserPreferencesRepository(appUserDataStore)
         showPreferencesRepository = ShowPreferencesRepository(appShowDataStore)
+        userCredentialsRepository = UserCredentialsRepository(appUserCredentialsStore)
         repository = BanknotesCatalogRepository.create(
             applicationContext,
             apiClient,

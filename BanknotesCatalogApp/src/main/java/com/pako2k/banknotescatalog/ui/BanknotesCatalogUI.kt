@@ -380,7 +380,7 @@ fun MainScreen(
                             navController.navigate(MenuOption.COLLECTION.name)
                         }
 
-                        LoginView(loginViewModel){sessionId,_,_ ->
+                        LoginView(loginViewModel){
                             mainViewModel.userLogged()
                         }
                     }
