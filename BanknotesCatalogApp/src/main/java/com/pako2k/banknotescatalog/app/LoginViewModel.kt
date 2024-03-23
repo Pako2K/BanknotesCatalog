@@ -143,6 +143,6 @@ class LoginViewModel private constructor(
             )
         }
 
-        return session;
+        return session
     }
 }
