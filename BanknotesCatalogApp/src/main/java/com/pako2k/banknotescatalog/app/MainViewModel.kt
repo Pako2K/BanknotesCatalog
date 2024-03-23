@@ -9,25 +9,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.Currency
-import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.Territory
-import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
 import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
-import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
 import com.pako2k.banknotescatalog.data.repo.ShowPreferences
 import com.pako2k.banknotescatalog.data.repo.ShowPreferencesRepository
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldCurrencies
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldDenominations
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldEnd
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldIssues
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldNotes
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldPrice
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldStart
-import com.pako2k.banknotescatalog.data.repo.TerritoryFieldVariants
-import com.pako2k.banknotescatalog.data.repo.TerritorySortableField
 import com.pako2k.banknotescatalog.data.repo.UserPreferences
 import com.pako2k.banknotescatalog.data.repo.UserPreferencesRepository
-import com.pako2k.banknotescatalog.data.stats.TerritorySummaryStats
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -35,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -50,7 +36,7 @@ class MainViewModel private constructor(
     ctx: Context,
     private val repository : BanknotesCatalogRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val showPreferencesRepository: ShowPreferencesRepository
+    showPreferencesRepository: ShowPreferencesRepository
     ) : ViewModel() {
 
     // Private so it cannot be updated outside this MainViewModel
@@ -62,8 +48,6 @@ class MainViewModel private constructor(
     private val _mainUiInitializationState = MutableStateFlow(MainUiInitializationState())
     // Public property to read the UI state
     val initializationState = _mainUiInitializationState.asStateFlow()
-
-
 
     val userPreferencesState = userPreferencesRepository.userPreferencesFlow.stateIn(
         scope = viewModelScope,
@@ -80,47 +64,6 @@ class MainViewModel private constructor(
     val continents
         get() = repository.continents
 
-    private var territoriesViewData : List<Territory> = listOf()
-        set(value) {
-            field = value
-            val uiData : MutableList<List<Any?>> = mutableListOf()
-            for(ter in value){
-                val terTypSuffix =
-                    if( ter.territoryType.name == TerritoryTypeEnum.Ind.value) ""
-                    else " [${repository.territoryTypes[ter.territoryType.id]?.abbreviation}]"
-                val stats = repository.territoryCatStats.find { it.id == ter.id }
-                uiData.add(
-                    listOf(
-                        repository.flags[ter.flagName],
-                        ter.iso3?:"",
-                        Pair(ter.id, ter.name + terTypSuffix),
-                        ter.start.toString(),
-                        ter.end?.toString()?:"",
-                        stats?.numCurrencies.toString(),
-                        "-",
-                        stats?.numSeries.toString(),
-                        "-",
-                        stats?.numDenominations.toString(),
-                        "-",
-                        stats?.numNotes.toString(),
-                        "-",
-                        stats?.numVariants.toString(),
-                        "-",
-                        "-"
-                    )
-                )
-            }
-            territoriesViewDataUI = uiData
-        }
-
-    /*
-        Field values for the Summary Table
-        Property automatically set when the territoriesViewData is modified
-    */
-    lateinit var territoriesViewDataUI : List<List<Any?>>
-        private set
-
-
 
     fun territoryViewData(terId : UInt) : Territory? {
         val ter = (repository.territories.find{ it.id == terId })
@@ -132,10 +75,6 @@ class MainViewModel private constructor(
         val cur = (repository.currencies.find{ it.id == curId })
         cur?.extend(territoriesList = repository.territories, flags = repository.flags, currenciesList = repository.currencies)
         return cur
-    }
-
-    fun getTerritoryStats() : Map<String, TerritorySummaryStats> {
-        return repository.territorySummaryStats
     }
 
 
@@ -171,9 +110,6 @@ class MainViewModel private constructor(
                     repository.fetchContinents()
                     repository.fetchTerritoryTypes()
                     repository.fetchTerritories()
-
-                    // Set the data to be shown in UI
-                    territoriesViewData = repository.territories
                     retryCount = MAX_RETRIES
                     ComponentState.DONE
                 } catch (exc: Exception) {
@@ -301,13 +237,6 @@ class MainViewModel private constructor(
             return@async result
         }.let { jobs.add(it) }
 
-        viewModelScope.launch {
-            showPreferencesRepository.showPreferencesFlow.first().let { preferences ->
-                preferences.map.forEach {
-                    if (!it.value) updateColVisibility(it.key, false)
-                }
-            }
-        }
 
         viewModelScope.launch{
             Log.d(ctx.getString(R.string.app_log_tag), "Waiting for all jobs...")
@@ -317,7 +246,6 @@ class MainViewModel private constructor(
                 if (results.contains(ComponentState.FAILED))
                     ComponentState.FAILED
                 else {
-                    repository.setStats()
                     ComponentState.DONE
                 }
 
@@ -356,40 +284,6 @@ class MainViewModel private constructor(
         }
     }
 
-    fun updateSettings(showPreference : ShowPreferenceEnum, value : Boolean ){
-        viewModelScope.launch {
-            showPreferencesRepository.updateShowPreference(showPreference, value)
-        }
-        updateColVisibility(showPreference, value)
-    }
-
-    private fun updateColVisibility(showPreference : ShowPreferenceEnum, value : Boolean){
-        when (showPreference){
-            ShowPreferenceEnum.SHOW_DATES -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldStart, value)
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldEnd, value)
-            }
-            ShowPreferenceEnum.SHOW_CUR -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldCurrencies, value)
-            }
-            ShowPreferenceEnum.SHOW_ISSUES -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldIssues, value)
-            }
-            ShowPreferenceEnum.SHOW_VALUES -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldDenominations, value)
-            }
-            ShowPreferenceEnum.SHOW_NOTES -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldNotes, value)
-            }
-            ShowPreferenceEnum.SHOW_VARIANTS -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldVariants, value)
-            }
-            ShowPreferenceEnum.SHOW_PRICES -> {
-                _mainUiState.value.territoriesTable.showCol(TerritoryFieldPrice, value)
-            }
-            else -> Unit
-        }
-    }
 
     fun getCurrencyBookmark(id: UInt) : String? {
         val cur = currencyViewData(id) ?: return null
@@ -403,115 +297,6 @@ class MainViewModel private constructor(
         return bookmark
     }
 
-    fun setContinentFilter(selectedContinentId : UInt?) {
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                selectedContinent = selectedContinentId
-            )
-        }
-        filterTerritories()
-        repository.setStats(selectedContinentId)
-    }
-
-    fun sortTerritoriesBy(sortBy : TerritorySortableField, statsCol : StatsSubColumn?) {
-        _mainUiState.value.territoriesTable.sortBy( _mainUiState.value.territoriesTable.getCol(sortBy)?:2, statsCol)
-
-        val sortedColumn = _mainUiState.value.territoriesTable.sortedBy
-        val newSortingDir = _mainUiState.value.territoriesTable.columns[sortedColumn].sortedDirection!!
-        repository.sortTerritories(sortBy, statsCol, newSortingDir )
-
-        // Apply filter to the entire sorted list
-        filterTerritories()
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                summaryTableTriggerUpdateFlag = !currentState.summaryTableTriggerUpdateFlag
-            )
-        }
-    }
-
-    fun showTerritoryStats(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showTerritoryStats = visible,
-                showTerritoryFilters = false
-            )
-        }
-    }
-
-
-    fun showTerritoryFilters(visible: Boolean){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                showTerritoryFilters = visible,
-                showTerritoryStats = false
-            )
-        }
-    }
-
-
-    fun updateFilterTerritoryType(type : TerritoryTypeEnum, isSelected : Boolean){
-        val newMap = _mainUiState.value.filterTerritoryTypes.mapValues { if(it.key == type) isSelected else it.value }
-
-        // At least one type must be selected!!
-        if (!newMap.containsValue(true)) return
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterTerritoryTypes = newMap
-            )
-        }
-        filterTerritories()
-    }
-
-    fun updateFilterTerritoryState(isSelected : Pair<Boolean, Boolean>){
-        // At least one state must be true!!
-        if (!isSelected.first && !isSelected.second) return
-
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterTerritoryState = isSelected
-            )
-        }
-        filterTerritories()
-    }
-
-    fun updateFilterTerritoryFoundedDates(dates : FilterDates){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterTerFounded = dates
-            )
-        }
-        if (dates.isValid) {
-            filterTerritories()
-        }
-    }
-
-    fun updateFilterTerritoryExtinctDates(dates : FilterDates){
-        _mainUiState.update { currentState ->
-            currentState.copy(
-                filterTerExtinct = dates
-            )
-        }
-        if (dates.isValid) {
-            filterTerritories()
-        }
-    }
-
-
-    private fun filterTerritories() {
-        val filterTerTypesToList = _mainUiState.value.filterTerritoryTypes.filter { it.value }.keys.toList().let {
-            if (it.size == _mainUiState.value.filterTerritoryTypes.size) null else it
-        }
-        territoriesViewData = repository.getTerritories(
-            _mainUiState.value.selectedContinent,
-            filterTerTypesToList,
-            _mainUiState.value.filterTerritoryState.first,
-            _mainUiState.value.filterTerritoryState.second,
-            _mainUiState.value.filterTerFounded,
-            _mainUiState.value.filterTerExtinct
-        )
-    }
 
     fun userLogged() {
         _mainUiState.update { currentState ->

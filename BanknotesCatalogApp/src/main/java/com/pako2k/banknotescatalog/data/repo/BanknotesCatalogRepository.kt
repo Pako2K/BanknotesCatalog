@@ -262,8 +262,7 @@ class BanknotesCatalogRepository private constructor(
         collection = banknotesNetworkDataSource.getCollection(sessionId)
     }
 
-
-    fun setStats(continentId : UInt? = null){
+    fun setTerritoryStats(continentId: UInt?){
         val tmp = mutableMapOf<String, TerritorySummaryStats>()
         val territoriesByCont = if (continentId!= null) territories.filter { it.continent.id == continentId } else territories
         territoryTypes.forEach { type ->

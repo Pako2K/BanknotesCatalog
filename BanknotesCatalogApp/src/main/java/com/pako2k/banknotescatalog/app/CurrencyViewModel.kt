@@ -88,7 +88,7 @@ class CurrencyViewModel private constructor(
         val Factory : ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as BanknotesCatalogApplication
-                Log.d(application.getString(R.string.app_log_tag), "Create DenominationViewModel")
+                Log.d(application.getString(R.string.app_log_tag), "Create CurrencyViewModel")
 
                 CurrencyViewModel(
                     application.applicationContext,

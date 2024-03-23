@@ -1,21 +1,14 @@
 package com.pako2k.banknotescatalog.ui
 
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.dimensionResource
@@ -48,6 +40,7 @@ import com.pako2k.banknotescatalog.app.DenominationViewModel
 import com.pako2k.banknotescatalog.app.IssueYearViewModel
 import com.pako2k.banknotescatalog.app.LoginViewModel
 import com.pako2k.banknotescatalog.app.MainViewModel
+import com.pako2k.banknotescatalog.app.TerritoryViewModel
 import com.pako2k.banknotescatalog.ui.parts.Bookmarks
 import com.pako2k.banknotescatalog.ui.parts.ContinentFilter
 import com.pako2k.banknotescatalog.ui.parts.FrontPage
@@ -64,8 +57,6 @@ import com.pako2k.banknotescatalog.ui.views.LoginView
 import com.pako2k.banknotescatalog.ui.views.SettingsUI
 import com.pako2k.banknotescatalog.ui.views.TerritoriesView
 import com.pako2k.banknotescatalog.ui.views.TerritoryView
-import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryFiltersUI
-import com.pako2k.banknotescatalog.ui.views.subviews.TerritoryStatsUI
 import kotlinx.coroutines.launch
 
 
@@ -96,6 +87,7 @@ fun BanknotesCatalogUI(
 fun MainScreen(
     windowSize : WindowSizeClass,
     mainViewModel : MainViewModel,
+    territoryViewModel : TerritoryViewModel = viewModel(factory = TerritoryViewModel.Factory),
     currencyViewModel : CurrencyViewModel = viewModel(factory = CurrencyViewModel.Factory),
     denominationViewModel : DenominationViewModel = viewModel(factory = DenominationViewModel.Factory),
     issueYearViewModel : IssueYearViewModel = viewModel(factory = IssueYearViewModel.Factory),
@@ -115,6 +107,7 @@ fun MainScreen(
     // uiState as state, to trigger recompositions
     val uiState by mainViewModel.uiState.collectAsState()
 
+    val territoryHasFilter = territoryViewModel.territoryHasFilterState.collectAsState()
     val currencyHasFilter = currencyViewModel.currencyHasFilterState.collectAsState()
     val denHasFilter = denominationViewModel.denominationHasFilterState.collectAsState()
     val yearHasFilter = issueYearViewModel.issueYearHasFilterState.collectAsState()
@@ -140,7 +133,7 @@ fun MainScreen(
          SettingsUI(
              options = showPreferences,
              onClick = { pref, value ->
-                 mainViewModel.updateSettings(pref, value)
+                 territoryViewModel.updateSettings(pref, value)
                  currencyViewModel.updateSettings(pref, value)
                  denominationViewModel.updateSettings(pref, value)
                  issueYearViewModel.updateSettings(pref, value)
@@ -150,14 +143,6 @@ fun MainScreen(
              })
     }
 
-    val hasFilter = when(mainMenuOption){
-        MenuOption.COUNTRIES ->
-            (uiState.filterTerritoryState != Pair(true,true) ||
-            uiState.filterTerritoryTypes.containsValue(false) ||
-            (uiState.filterTerFounded.isValid && (uiState.filterTerFounded.from != null || uiState.filterTerFounded.to != null)) ||
-            (uiState.filterTerExtinct.isValid && (uiState.filterTerExtinct.from != null || uiState.filterTerExtinct.to != null)))
-        else -> false
-    }
 
     // Screen content
     Scaffold(
@@ -165,10 +150,11 @@ fun MainScreen(
             Header(
                 isMenuEnabled = mainMenuOption!=null && mainMenuOption!=MenuOption.LOG_IN,
                 hasFilter = when(mainMenuOption){
+                    MenuOption.COUNTRIES -> territoryHasFilter.value
                     MenuOption.CURRENCIES -> currencyHasFilter.value
                     MenuOption.DENOMINATIONS -> denHasFilter.value
                     MenuOption.YEARS -> yearHasFilter.value
-                    else -> hasFilter
+                    else -> false
                 },
                 onMenuClicked = { scope.launch {
                     bookmarksState.apply { close() }
@@ -190,7 +176,7 @@ fun MainScreen(
                         onClick = {
                             scope.launch { headerMenuState.apply { close() } }
                             scope.launch { bookmarksState.apply { close() } }
-                            mainViewModel.setContinentFilter(it)
+                            territoryViewModel.setContinentFilter(it)
                             currencyViewModel.setContinentFilter(it)
                             denominationViewModel.setContinentFilter(it)
                             issueYearViewModel.setContinentFilter(it)
@@ -218,7 +204,7 @@ fun MainScreen(
                 scope.launch { headerMenuState.apply { close() } }
                 when (mainMenuOption){
                     MenuOption.COUNTRIES ->
-                        mainViewModel.showTerritoryFilters(true)
+                        territoryViewModel.showTerritoryFilters(true)
                     MenuOption.CURRENCIES ->
                         currencyViewModel.showFilters(true)
                     MenuOption.DENOMINATIONS ->
@@ -232,7 +218,7 @@ fun MainScreen(
                 scope.launch { headerMenuState.apply { close() } }
                 when (mainMenuOption){
                     MenuOption.COUNTRIES ->
-                        mainViewModel.showTerritoryStats(true)
+                        territoryViewModel.showTerritoryStats(true)
                     MenuOption.CURRENCIES ->
                         currencyViewModel.showStats(true)
                     MenuOption.DENOMINATIONS ->
@@ -292,56 +278,16 @@ fun MainScreen(
                         )
                     }
                     composable(MenuOption.COUNTRIES.name) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally, 
-                            modifier = Modifier
-                                .background(color = MaterialTheme.colorScheme.surface)
-                                .fillMaxWidth()
-                                .padding(padding)
-                        ) {
-                            if (uiState.showTerritoryStats) {
-                                TerritoryStatsUI(
-                                    data = mainViewModel.getTerritoryStats(),
-                                    continentName = uiState.selectedContinent?.let { mainViewModel.continents[it]?.name },
-                                    isLoggedIn = uiState.userLoggedIn,
-                                    onClose = {
-                                        mainViewModel.showTerritoryStats(false)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(padding))
+                        TerritoriesView(
+                            viewModel = territoryViewModel,
+                            width = screenWidth - 2 * padding,
+                            windowHeightClass = windowSize.heightSizeClass,
+                            isLogged = uiState.userLoggedIn,
+                            selectedContinent = uiState.selectedContinent?.let { mainViewModel.continents[it] },
+                            onCountryClick = {
+                                navController.navigate("COUNTRY/$it")
                             }
-                            if (uiState.showTerritoryFilters) {
-                                TerritoryFiltersUI (
-                                    terTypeFilters = uiState.filterTerritoryTypes,
-                                    terStateFilters = Pair(uiState.filterTerritoryState.first, uiState.filterTerritoryState.second),
-                                    terFoundedFilter = uiState.filterTerFounded,
-                                    terExtinctFilter = uiState.filterTerExtinct,
-                                    onTerTypeChanged = { type, isSelected -> mainViewModel.updateFilterTerritoryType(type, isSelected)},
-                                    onTerStateChanged = { mainViewModel.updateFilterTerritoryState(it)},
-                                    onTerFoundedChanged = {mainViewModel.updateFilterTerritoryFoundedDates(it)},
-                                    onTerExtinctChanged = {mainViewModel.updateFilterTerritoryExtinctDates(it)},
-                                    onClose = { mainViewModel.showTerritoryFilters(false)}
-                                )
-                                Spacer(modifier = Modifier.height(padding))
-                            }
-                            if ((!uiState.showTerritoryStats && !uiState.showTerritoryFilters) || windowSize.heightSizeClass != WindowHeightSizeClass.Compact) {
-                                TerritoriesView(
-                                    width = screenWidth - 2 * padding,
-                                    table = uiState.territoriesTable,
-                                    data = mainViewModel.territoriesViewDataUI,
-                                    onCountryClick = {
-                                        navController.navigate("COUNTRY/$it")
-                                    },
-                                    isLogged = uiState.userLoggedIn,
-                                    sortCallback = { field, statsCol ->
-                                        mainViewModel.sortTerritoriesBy(
-                                            field,
-                                            statsCol
-                                        )
-                                    }
-                                )
-                            }
-                        }
+                        )
                     }
                     composable(MenuOption.CURRENCIES.name) {
                         CurrenciesView(

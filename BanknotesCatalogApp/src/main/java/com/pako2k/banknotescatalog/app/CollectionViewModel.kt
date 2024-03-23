@@ -85,12 +85,11 @@ class CollectionViewModel private constructor(
                         sumPrice += item.item.price
                     } else {
                         // Add aggregatedPrice
-                        val priceStr = DecimalFormat("#,###.###").format(sumPrice)
                         uiData.add(
                             listOf(
                                 Pair(
                                     if (sortedVal is Pair<*, *>) sortedVal.second else sortedVal.toString(),
-                                    "{$priceStr} €"
+                                    "${DecimalFormat("#,###.###").format(sumPrice)} €"
                                 )
                             )
                         )
