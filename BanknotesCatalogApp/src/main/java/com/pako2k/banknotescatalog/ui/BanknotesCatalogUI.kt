@@ -41,6 +41,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pako2k.banknotescatalog.R
+import com.pako2k.banknotescatalog.app.CollectionViewModel
 import com.pako2k.banknotescatalog.app.ComponentState
 import com.pako2k.banknotescatalog.app.CurrencyViewModel
 import com.pako2k.banknotescatalog.app.DenominationViewModel
@@ -99,6 +100,7 @@ fun MainScreen(
     denominationViewModel : DenominationViewModel = viewModel(factory = DenominationViewModel.Factory),
     issueYearViewModel : IssueYearViewModel = viewModel(factory = IssueYearViewModel.Factory),
     loginViewModel: LoginViewModel =  viewModel(factory = LoginViewModel.Factory),
+    collectionViewModel: CollectionViewModel = viewModel(factory = CollectionViewModel.Factory),
     navController : NavHostController = rememberNavController()
 ){
     Log.d(stringResource(id = R.string.app_log_tag),"Start MainScreen")
@@ -192,6 +194,7 @@ fun MainScreen(
                             currencyViewModel.setContinentFilter(it)
                             denominationViewModel.setContinentFilter(it)
                             issueYearViewModel.setContinentFilter(it)
+                            collectionViewModel.setCollectionFilter(it)
                                   },
                     )
                 }
@@ -329,6 +332,7 @@ fun MainScreen(
                                     onCountryClick = {
                                         navController.navigate("COUNTRY/$it")
                                     },
+                                    isLogged = uiState.userLoggedIn,
                                     sortCallback = { field, statsCol ->
                                         mainViewModel.sortTerritoriesBy(
                                             field,
@@ -371,7 +375,13 @@ fun MainScreen(
                         )
                     }
                     composable(MenuOption.COLLECTION.name) {
-                        CollectionView()
+                        CollectionView(
+                            selectedContinent = uiState.selectedContinent,
+                            viewModel = collectionViewModel,
+                            onTerritoryClick = {navController.navigate("COUNTRY/$it")},
+                            onCurrencyClick = {navController.navigate("CURRENCY/$it")},
+                            {}
+                        )
                     }
                     composable(MenuOption.LOG_IN.name) {
                         // This can happen right after log in or when pressing the back button after logging in
@@ -379,10 +389,11 @@ fun MainScreen(
                             navController.popBackStack()
                             navController.navigate(MenuOption.COLLECTION.name)
                         }
-
-                        LoginView(loginViewModel){
-                            mainViewModel.userLogged()
-                        }
+                        else
+                            LoginView(loginViewModel){
+                                mainViewModel.userLogged()
+                                collectionViewModel.initialize(uiState.selectedContinent)
+                            }
                     }
                     composable(
                         "COUNTRY/{id}",

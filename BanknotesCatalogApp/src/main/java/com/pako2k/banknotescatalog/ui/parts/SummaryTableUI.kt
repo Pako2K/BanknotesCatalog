@@ -70,7 +70,7 @@ private const val DISABLED_HEADER_BUTTON_ALPHA = 0.5f
 fun SummaryTableUI(
     table : SummaryTable,
     availableWidth : Dp,
-    isLogged : Boolean = false,
+    isLogged : Boolean,
     data : List<List<Any?>>,
     onHeaderClick: (Int, StatsSubColumn?) -> Unit,
     onDataClick: (colIndex: Int, dataId : UInt) -> Unit
@@ -551,6 +551,7 @@ fun SummaryTablePreviewPortrait() {
             table = summaryTablePreview,
             availableWidth = TEST_WIDTH.dp,
             data = dataPreview,
+            isLogged = true,
             onHeaderClick = { _, _ -> },
             onDataClick = { _ , _ -> }
         )
@@ -572,6 +573,7 @@ fun SummaryTablePreviewLandscape() {
         table = summaryTablePreview,
         availableWidth = TEST_HEIGHT.dp,
         data = dataPreview,
+        isLogged = false,
         onHeaderClick = { _,_ -> },
         onDataClick = { _ , _ -> }
     )

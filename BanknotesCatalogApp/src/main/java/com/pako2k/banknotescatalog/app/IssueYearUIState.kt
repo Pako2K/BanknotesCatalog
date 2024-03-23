@@ -8,15 +8,15 @@ import com.pako2k.banknotescatalog.data.repo.IssueYearFieldIssues
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldNotes
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldPrice
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldTerritories
-import com.pako2k.banknotescatalog.data.repo.IssueYearFieldValue
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldVariants
+import com.pako2k.banknotescatalog.data.repo.IssueYearFieldYear
 import com.pako2k.banknotescatalog.data.repo.SortDirection
 
 
 data class IssueYearUIState(
     val yearsTable : SummaryTable = SummaryTable(
         columns = listOf(
-            SummaryTableColumn(title = "Issue Year", linkedField = IssueYearFieldValue, width = 90.dp, isSortable = true, isClickable = true),
+            SummaryTableColumn(title = "Issue Year", linkedField = IssueYearFieldYear, width = 90.dp, isSortable = true, isClickable = true),
             SummaryTableColumn(title = "Territories", linkedField = IssueYearFieldTerritories, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
             SummaryTableColumn(title = "Currencies", linkedField = IssueYearFieldCurrencies, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),
             SummaryTableColumn(title = "Issues", linkedField = IssueYearFieldIssues, isStats = true, width = STATS_COL_WIDTH.dp, isSortable = true),

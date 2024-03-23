@@ -7,6 +7,7 @@ import com.pako2k.banknotescatalog.app.StatsSubColumn
 import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
 import com.pako2k.banknotescatalog.data.FilterDates
+import com.pako2k.banknotescatalog.data.ItemLinked
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryType
 import com.pako2k.banknotescatalog.data.TerritoryTypeEnum
@@ -32,9 +33,21 @@ enum class SortDirection {
 
 sealed class SortableField
 
+
+// Enumeration of Territory fields which can be used for sorting. Implemented as child of SortableField!
+sealed class CollectionSortableField : SortableField()
+object CollectionFieldTerritory : CollectionSortableField()
+object CollectionFieldDenomination : CollectionSortableField()
+object CollectionFieldCurrency : CollectionSortableField()
+object CollectionFieldPrice : CollectionSortableField()
+object CollectionFieldSeller : CollectionSortableField()
+object CollectionFieldPurchaseDate : CollectionSortableField()
+
+
+
 // Enumeration of IssueYear fields which can be used for sorting. Implemented as child of SortableField!
 sealed class IssueYearSortableField : SortableField()
-object IssueYearFieldValue : IssueYearSortableField()
+object IssueYearFieldYear : IssueYearSortableField()
 object IssueYearFieldTerritories : IssueYearSortableField()
 object IssueYearFieldCurrencies : IssueYearSortableField()
 object IssueYearFieldIssues : IssueYearSortableField()
@@ -157,6 +170,9 @@ class BanknotesCatalogRepository private constructor(
     )
         private set
 
+    var collection : List<ItemLinked> = listOf()
+        private set
+
     companion object {
         private var _repository : BanknotesCatalogRepository? = null
 
@@ -241,6 +257,11 @@ class BanknotesCatalogRepository private constructor(
     suspend fun fetchIssueYearStats() {
         issueYearCatStats = banknotesNetworkDataSource.getIssueYearStats()
     }
+
+    suspend fun fetchCollection(sessionId : String){
+        collection = banknotesNetworkDataSource.getCollection(sessionId)
+    }
+
 
     fun setStats(continentId : UInt? = null){
         val tmp = mutableMapOf<String, TerritorySummaryStats>()
@@ -561,7 +582,7 @@ class BanknotesCatalogRepository private constructor(
 
     fun sortIssueYears(sortBy : IssueYearSortableField, statsCol : StatsSubColumn?, sortingDir : SortDirection, continentId : UInt?){
         issueYearCatStats = when (sortBy){
-            IssueYearFieldValue ->
+            IssueYearFieldYear ->
                 if (sortingDir == SortDirection.DESC){
                     issueYearCatStats.sortedByDescending { it.issueYear }
                 }
@@ -678,6 +699,55 @@ class BanknotesCatalogRepository private constructor(
             }
         }
     }
+
+
+    fun sortCollection(sortBy : CollectionSortableField, sortingDir : SortDirection){
+        collection = when (sortBy){
+            CollectionFieldTerritory ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.territory.name }
+                }
+                else{
+                    collection.sortedBy { it.territory.name }
+                }
+            CollectionFieldDenomination ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.denomination }
+                }
+                else{
+                    collection.sortedBy { it.denomination }
+                }
+            CollectionFieldCurrency ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.currency.name }
+                }
+                else{
+                    collection.sortedBy { it.currency.name }
+                }
+            CollectionFieldPrice ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.item.price }
+                }
+                else{
+                    collection.sortedBy { it.item.price }
+                }
+            CollectionFieldSeller ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.item.seller }
+                }
+                else{
+                    collection.sortedBy { it.item.seller }
+                }
+            CollectionFieldPurchaseDate ->
+                if (sortingDir == SortDirection.DESC){
+                    collection.sortedByDescending { it.item.purchaseDate }
+                }
+                else{
+                    collection.sortedBy { it.item.purchaseDate }
+                }
+        }
+    }
+
 
     fun getTerritories (
         byContinent : UInt?,

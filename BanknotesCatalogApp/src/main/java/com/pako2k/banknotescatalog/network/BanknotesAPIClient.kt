@@ -3,6 +3,7 @@ package com.pako2k.banknotescatalog.network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.pako2k.banknotescatalog.data.Continent
 import com.pako2k.banknotescatalog.data.Currency
+import com.pako2k.banknotescatalog.data.ItemLinked
 import com.pako2k.banknotescatalog.data.Territory
 import com.pako2k.banknotescatalog.data.TerritoryType
 import com.pako2k.banknotescatalog.data.UserSession
@@ -50,6 +51,9 @@ interface BanknotesAPIService{
 
     @GET("issue-year/stats")
     suspend fun getIssueYearStats() : List<IssueYearStats>
+
+    @GET("item")
+    suspend fun getCollection(@Header("Authorization") bearerToken: String) : List<ItemLinked>
 }
 
 
@@ -91,5 +95,6 @@ class BanknotesAPIClient (
         toYear : Int? = null)
      = retrofitService.getDenominationStats(fromYear, toYear)
     suspend fun getIssueYearStats() = retrofitService.getIssueYearStats()
+    suspend fun getCollection(sessionId : String) = retrofitService.getCollection("Bearer $sessionId")
 
 }

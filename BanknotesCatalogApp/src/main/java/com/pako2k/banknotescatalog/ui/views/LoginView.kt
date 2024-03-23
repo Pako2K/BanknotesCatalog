@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginView(
     viewModel: LoginViewModel,
-    onLoggedIn : () -> Unit
+    onLoggedIn : ()-> Unit
 ){
     Log.d(stringResource(id = R.string.app_log_tag), "Start Login")
 
@@ -123,8 +123,7 @@ fun LoginView(
                     onClick = {
                         val prevState = loginUiState.value.isInvalidUserPwd
                         scope.launch {
-                            viewModel.logIn()
-                            val session = viewModel.userSession
+                            val session = viewModel.logIn()
                             if (session != null && session.id.isNotEmpty())
                                 onLoggedIn()
                             else

@@ -40,6 +40,12 @@ data class CurrencyUnit(
 )
 
 @Serializable
+data class CurrencyKey(
+    val id : UInt,
+    val name : String
+)
+
+@Serializable
 data class Currency (
     val id : UInt,
     val name : String,

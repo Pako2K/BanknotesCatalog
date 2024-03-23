@@ -24,6 +24,7 @@ import com.pako2k.banknotescatalog.ui.theme.BanknotesCatalogTheme
 fun TerritoriesView(
     width: Dp,
     table : SummaryTable,
+    isLogged : Boolean,
     data : List<List<Any?>>,
     sortCallback: (sortBy: TerritorySortableField, statCol : StatsSubColumn?)->Unit,
     onCountryClick: (territoryID: UInt)->Unit,
@@ -34,6 +35,7 @@ fun TerritoriesView(
         table = table,
         availableWidth = width,
         data = data,
+        isLogged = isLogged,
         onHeaderClick = { colId, statsCol ->
                 sortCallback(table.columns[colId].linkedField as TerritorySortableField, statsCol)
                         },
@@ -74,6 +76,7 @@ fun CountriesPreview() {
             width = TEST_WIDTH.dp,
             table = summaryTablePreview,
             data = dataPreview,
+            isLogged = false,
             onCountryClick = {},
             sortCallback = {_,_->}
         )

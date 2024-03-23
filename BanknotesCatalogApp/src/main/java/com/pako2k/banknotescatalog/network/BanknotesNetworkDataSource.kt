@@ -17,4 +17,6 @@ class BanknotesNetworkDataSource (
         toYear : Int? = null)
             = client.getDenominationStats(fromYear, toYear)
     suspend fun getIssueYearStats() = client.getIssueYearStats()
+
+    suspend fun  getCollection(sessionId : String) = client.getCollection(sessionId)
 }

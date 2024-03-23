@@ -31,6 +31,10 @@
     <string name="cur_menu_stats">Stats</string>
     <string name="cur_menu_info">Info</string>
 
+    <string name="col_menu_banknotes">Banknotes</string>
+    <string name="col_menu_date">Date Stats</string>
+    <string name="col_menu_seller">Seller Stats</string>
+
     <string name="login_username">User name</string>
     <string name="login_password">Password</string>
     <string name="login_title">Log in to manage your collection</string>

@@ -11,11 +11,11 @@ import com.pako2k.banknotescatalog.R
 import com.pako2k.banknotescatalog.data.FilterDates
 import com.pako2k.banknotescatalog.data.repo.BanknotesCatalogRepository
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldCurrencies
+import com.pako2k.banknotescatalog.data.repo.IssueYearFieldDenominations
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldIssues
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldNotes
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldPrice
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldTerritories
-import com.pako2k.banknotescatalog.data.repo.IssueYearFieldValue
 import com.pako2k.banknotescatalog.data.repo.IssueYearFieldVariants
 import com.pako2k.banknotescatalog.data.repo.IssueYearSortableField
 import com.pako2k.banknotescatalog.data.repo.ShowPreferenceEnum
@@ -198,7 +198,7 @@ class IssueYearViewModel private constructor(
                 _issueYearUIState.value.yearsTable.showCol(IssueYearFieldIssues, value)
             }
             ShowPreferenceEnum.SHOW_VALUES -> {
-                _issueYearUIState.value.yearsTable.showCol(IssueYearFieldValue, value)
+                _issueYearUIState.value.yearsTable.showCol(IssueYearFieldDenominations, value)
             }
             ShowPreferenceEnum.SHOW_NOTES -> {
                 _issueYearUIState.value.yearsTable.showCol(IssueYearFieldNotes, value)

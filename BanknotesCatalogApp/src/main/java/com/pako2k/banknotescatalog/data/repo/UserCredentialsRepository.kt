@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.pako2k.banknotescatalog.data.UserSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -27,6 +28,9 @@ data class UserCredentials(
 class UserCredentialsRepository(
     private val dataStore: DataStore<Preferences>
 ) {
+    var userSession: UserSession? = null
+        private set
+
     private val tag: String = "UserCredentialsRepo"
 
     //Keys (and value types) used in the data store
@@ -52,7 +56,8 @@ class UserCredentialsRepository(
         }
 
 
-    suspend fun updateCredentials(username: String, password: String) {
+    suspend fun updateCredentials(username: String, password: String, session: UserSession) {
+        userSession = session
         dataStore.edit { preferences ->
             preferences[KEY_CREDENTIALS] = username + DELIMITER + password
         }

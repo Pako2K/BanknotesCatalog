@@ -34,7 +34,6 @@ class SummaryTable(
     sortDirection : SortDirection,
     val minFixedColumns : Int
 ){
-    //    private val columnsMap : Map<Int,SummaryTableColumnClass>
     var sortedBy : Int = sortedBy
         private set
 

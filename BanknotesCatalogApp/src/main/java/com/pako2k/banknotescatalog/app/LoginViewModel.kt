@@ -24,8 +24,7 @@ class LoginViewModel private constructor(
     private val repository: BanknotesCatalogRepository,
     private val userCredentials: UserCredentialsRepository
 ) : ViewModel() {
-    var userSession : UserSession? = null
-        private set
+
     var loginError : String? = null
         private set
 
@@ -84,18 +83,19 @@ class LoginViewModel private constructor(
         }
     }
 
-    suspend fun logIn() {
+    suspend fun logIn() : UserSession? {
         _loginUIState.update { currentState ->
             currentState.copy(
                 loginState = ComponentState.LOADING
             )
         }
 
+        var session : UserSession? = null
         try {
-            userSession = repository.getUserSession(loginUIState.value.username, loginUIState.value.password)
+            session = repository.getUserSession(loginUIState.value.username, loginUIState.value.password)
 
             // Update data store
-            userCredentials.updateCredentials(loginUIState.value.username, loginUIState.value.password)
+            userCredentials.updateCredentials(loginUIState.value.username, loginUIState.value.password, session)
         }
         catch (exc : HttpException){
             Log.e("Error", exc.toString())
@@ -142,5 +142,7 @@ class LoginViewModel private constructor(
                 loginState = ComponentState.DONE
             )
         }
+
+        return session;
     }
 }

@@ -79,6 +79,7 @@ fun CurrenciesView(
                 table = uiState.currenciesTable,
                 availableWidth = width,
                 data = viewModel.currenciesViewDataUI,
+                isLogged = isLogged,
                 onHeaderClick = { colId, statsCol ->
                     viewModel.sortCurrenciesBy(
                         uiState.currenciesTable.columns[colId].linkedField as CurrencySortableField,
